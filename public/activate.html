@@ -1,0 +1,372 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Activate Software - EyeTech VMS</title>
+  <!-- Google Fonts: Outfit -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+  <!-- Lucide Icons -->
+  <script src="https://unpkg.com/lucide@latest"></script>
+  <style>
+    :root {
+      --bg-primary: #0b0f19;
+      --bg-surface: #151c2c;
+      --accent: #2563eb;
+      --accent-hover: #1d4ed8;
+      --text-primary: #f3f4f6;
+      --text-secondary: #9ca3af;
+      --border-color: #1f2937;
+      --success: #10b981;
+      --error: #ef4444;
+    }
+
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+
+    body {
+      font-family: 'Outfit', sans-serif;
+      background: radial-gradient(circle at top, #1e293b, var(--bg-primary) 70%);
+      color: var(--text-primary);
+      min-height: 100vh;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 20px;
+    }
+
+    .activation-card {
+      background: rgba(21, 28, 44, 0.85);
+      backdrop-filter: blur(12px);
+      border: 1px solid var(--border-color);
+      border-radius: 16px;
+      width: 100%;
+      max-width: 480px;
+      padding: 40px 30px;
+      box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.5), 0 8px 10px -6px rgba(0, 0, 0, 0.5);
+      text-align: center;
+    }
+
+    .brand-icon-wrapper {
+      width: 64px;
+      height: 64px;
+      background: rgba(37, 99, 235, 0.1);
+      color: var(--accent);
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      margin: 0 auto 20px;
+    }
+
+    h1 {
+      font-size: 24px;
+      font-weight: 600;
+      margin-bottom: 8px;
+    }
+
+    .subtitle {
+      color: var(--text-secondary);
+      font-size: 14px;
+      margin-bottom: 30px;
+    }
+
+    .hardware-section {
+      background: rgba(255, 255, 255, 0.02);
+      border: 1px dashed var(--border-color);
+      border-radius: 8px;
+      padding: 16px;
+      margin-bottom: 24px;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .hardware-label {
+      font-size: 11px;
+      text-transform: uppercase;
+      letter-spacing: 1px;
+      color: var(--text-secondary);
+    }
+
+    .hardware-id-container {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      width: 100%;
+      justify-content: center;
+    }
+
+    .hardware-id {
+      font-family: monospace;
+      font-size: 18px;
+      color: var(--text-primary);
+      letter-spacing: 1px;
+      font-weight: bold;
+    }
+
+    .copy-btn {
+      background: rgba(37, 99, 235, 0.15);
+      color: var(--accent);
+      border: none;
+      border-radius: 6px;
+      padding: 6px 12px;
+      font-size: 12px;
+      font-weight: 500;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      gap: 4px;
+      transition: all 0.2s;
+    }
+
+    .copy-btn:hover {
+      background: var(--accent);
+      color: white;
+    }
+
+    .form-group {
+      text-align: left;
+      margin-bottom: 24px;
+    }
+
+    label {
+      display: block;
+      font-size: 12px;
+      font-weight: 500;
+      margin-bottom: 6px;
+      color: var(--text-secondary);
+    }
+
+    .input-wrapper {
+      position: relative;
+    }
+
+    .input-wrapper i {
+      position: absolute;
+      left: 12px;
+      top: 50%;
+      transform: translateY(-50%);
+      color: var(--text-secondary);
+    }
+
+    input[type="text"] {
+      width: 100%;
+      background: #111827;
+      border: 1px solid var(--border-color);
+      color: var(--text-primary);
+      padding: 12px 12px 12px 38px;
+      border-radius: 8px;
+      font-size: 14px;
+      font-family: monospace;
+      transition: border-color 0.2s;
+    }
+
+    input[type="text"]:focus {
+      outline: none;
+      border-color: var(--accent);
+    }
+
+    .submit-btn {
+      width: 100%;
+      background: var(--accent);
+      color: white;
+      border: none;
+      padding: 12px;
+      font-size: 14px;
+      font-weight: 600;
+      border-radius: 8px;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+      transition: background 0.2s;
+    }
+
+    .submit-btn:hover {
+      background: var(--accent-hover);
+    }
+
+    .status-msg {
+      margin-top: 16px;
+      font-size: 13px;
+      border-radius: 6px;
+      padding: 10px;
+      display: none;
+    }
+
+    .status-msg.success {
+      background: rgba(16, 185, 129, 0.1);
+      color: var(--success);
+      border: 1px solid rgba(16, 185, 129, 0.2);
+    }
+
+    .status-msg.error {
+      background: rgba(239, 68, 68, 0.1);
+      color: var(--error);
+      border: 1px solid rgba(239, 68, 68, 0.2);
+    }
+
+    .footer-support {
+      margin-top: 30px;
+      font-size: 12px;
+      color: var(--text-secondary);
+      border-top: 1px solid var(--border-color);
+      padding-top: 20px;
+    }
+
+    .footer-support a {
+      color: var(--accent);
+      text-decoration: none;
+    }
+
+    .footer-support a:hover {
+      text-decoration: underline;
+    }
+  </style>
+</head>
+<body>
+  <div class="activation-card">
+    <div class="brand-icon-wrapper">
+      <i data-lucide="key-round" style="width: 28px; height: 28px;"></i>
+    </div>
+    <h1>Activate EyeTech VMS</h1>
+    <p class="subtitle">Please activate your software license to unlock the surveillance dashboard.</p>
+
+    <div class="hardware-section">
+      <div class="hardware-label">Your Unique Hardware ID</div>
+      <div class="hardware-id-container">
+        <span class="hardware-id" id="hardware-id">LOADING-HID...</span>
+        <button class="copy-btn" id="copy-hid-btn">
+          <i data-lucide="copy" style="width: 12px; height: 12px;"></i>
+          Copy
+        </button>
+      </div>
+    </div>
+
+    <form id="activation-form">
+      <div class="form-group">
+        <label for="activation-key">License Activation Key</label>
+        <div class="input-wrapper">
+          <i data-lucide="shield-check" style="width: 16px; height: 16px;"></i>
+          <input type="text" id="activation-key" placeholder="ET-VMS-XXXX-XXXX-XXXX" required autocomplete="off">
+        </div>
+      </div>
+      <button type="submit" class="submit-btn" id="submit-btn">
+        <i data-lucide="check-circle" style="width: 16px; height: 16px;"></i>
+        Activate Software
+      </button>
+    </form>
+
+    <div class="status-msg" id="status-message"></div>
+
+    <div class="footer-support">
+      Email your Hardware ID to <a href="mailto:eyetechsecurities@gmail.com">eyetechsecurities@gmail.com</a> to purchase or receive your Activation Key.
+    </div>
+  </div>
+
+  <script>
+    // Initialize Lucide Icons
+    lucide.createIcons();
+
+    const hardwareIdEl = document.getElementById('hardware-id');
+    const copyBtn = document.getElementById('copy-hid-btn');
+    const form = document.getElementById('activation-form');
+    const keyInput = document.getElementById('activation-key');
+    const submitBtn = document.getElementById('submit-btn');
+    const statusMsg = document.getElementById('status-message');
+
+    // Fetch Hardware ID from client backend
+    async function loadHardwareId() {
+      try {
+        const res = await fetch('/api/license/hardware-id');
+        const data = await res.json();
+        if (data.hardwareId) {
+          hardwareIdEl.textContent = data.hardwareId;
+        } else {
+          hardwareIdEl.textContent = 'ERROR-LOADING-HID';
+        }
+      } catch (err) {
+        console.error(err);
+        hardwareIdEl.textContent = 'CONNECTION-ERROR';
+      }
+    }
+
+    loadHardwareId();
+
+    // Copy Hardware ID handler
+    copyBtn.addEventListener('click', () => {
+      const hid = hardwareIdEl.textContent;
+      if (hid.includes('LOADING') || hid.includes('ERROR') || hid.includes('CONNECTION')) return;
+
+      navigator.clipboard.writeText(hid);
+      const originalText = copyBtn.innerHTML;
+      copyBtn.innerHTML = '<i data-lucide="check" style="width: 12px; height: 12px;"></i> Copied!';
+      lucide.createIcons();
+      copyBtn.style.background = 'var(--success)';
+      copyBtn.style.color = 'white';
+
+      setTimeout(() => {
+        copyBtn.innerHTML = originalText;
+        lucide.createIcons();
+        copyBtn.style.background = '';
+        copyBtn.style.color = '';
+      }, 2000);
+    });
+
+    // Form submission handler
+    form.addEventListener('submit', async (e) => {
+      e.preventDefault();
+      const key = keyInput.value.trim();
+
+      submitBtn.disabled = true;
+      submitBtn.textContent = 'Verifying key...';
+
+      statusMsg.style.display = 'none';
+      statusMsg.className = 'status-msg';
+
+      try {
+        const res = await fetch('/api/license/activate', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ licenseKey: key })
+        });
+
+        const data = await res.json();
+
+        if (res.ok && data.success) {
+          statusMsg.textContent = 'Activation Successful! Redirecting to dashboard...';
+          statusMsg.classList.add('success');
+          statusMsg.style.display = 'block';
+
+          setTimeout(() => {
+            window.location.href = '/index.html';
+          }, 2000);
+        } else {
+          statusMsg.textContent = data.message || 'Invalid Activation Key.';
+          statusMsg.classList.add('error');
+          statusMsg.style.display = 'block';
+          submitBtn.disabled = false;
+          submitBtn.innerHTML = '<i data-lucide="check-circle" style="width: 16px; height: 16px;"></i> Activate Software';
+          lucide.createIcons();
+        }
+      } catch (err) {
+        console.error(err);
+        statusMsg.textContent = 'Failed to communicate with VMS backend server.';
+        statusMsg.classList.add('error');
+        statusMsg.style.display = 'block';
+        submitBtn.disabled = false;
+        submitBtn.innerHTML = '<i data-lucide="check-circle" style="width: 16px; height: 16px;"></i> Activate Software';
+        lucide.createIcons();
+      }
+    });
+  </script>
+</body>
+</html>

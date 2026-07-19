@@ -1,0 +1,466 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>VMS Dashboard - Local Video Management System</title>
+  <!-- Google Fonts: Outfit -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+  <!-- Lucide Icons -->
+  <script src="https://unpkg.com/lucide@latest"></script>
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+  <div class="app-container">
+    
+    <!-- Sidebar Navigation -->
+    <aside class="sidebar">
+      <div class="brand">
+        <i data-lucide="shield-alert" class="brand-icon"></i>
+        <h2>EyeTech VMS</h2>
+      </div>
+      <nav class="nav-menu">
+        <a href="#" class="nav-item active" id="nav-dashboard-tab">
+          <i data-lucide="layout-dashboard"></i>
+          <span>Dashboard</span>
+        </a>
+        <a href="#" class="nav-item" id="nav-settings-tab">
+          <i data-lucide="settings"></i>
+          <span>Cameras & Settings</span>
+        </a>
+      </nav>
+      <div class="sidebar-footer">
+        <div class="status-indicator-global">
+          <span class="pulse-dot green"></span>
+          <span>System Running</span>
+        </div>
+      </div>
+    </aside>
+
+    <!-- Main Content Area -->
+    <main class="main-content">
+      
+      <!-- Top header bar -->
+      <header class="top-header">
+        <div class="header-title">
+          <h1 id="view-title">System Overview</h1>
+          <p id="current-time">Sunday, July 19, 2026</p>
+        </div>
+        <div class="user-profile">
+          <span class="user-badge">Administrator</span>
+        </div>
+      </header>
+
+      <!-- Dashboard View -->
+      <div class="dashboard-grid" id="dashboard-view">
+        
+        <!-- Metrics Row -->
+        <div class="metrics-container">
+          <div class="metric-card glass">
+            <div class="card-icon-container blue-glow">
+              <i data-lucide="video" class="metric-icon"></i>
+            </div>
+            <div class="metric-details">
+              <h3>Active Cameras</h3>
+              <p class="metric-value" id="active-cameras-count">- / -</p>
+              <span class="metric-label" id="cameras-online-label">Connecting ONVIF...</span>
+            </div>
+          </div>
+
+          <div class="metric-card glass">
+            <div class="card-icon-container green-glow">
+              <i data-lucide="database" class="metric-icon"></i>
+            </div>
+            <div class="metric-details">
+              <h3>Storage Load</h3>
+              <p class="metric-value" id="storage-load-value">0.00 GB</p>
+              <span class="metric-label" id="storage-files-label">0 video segments</span>
+            </div>
+          </div>
+
+          <div class="metric-card glass">
+            <div class="card-icon-container purple-glow">
+              <i data-lucide="hard-drive" class="metric-icon"></i>
+            </div>
+            <div class="metric-details">
+              <h3>Storage Limit</h3>
+              <p class="metric-value" id="storage-limit-value">0.00 GB</p>
+              <span class="metric-label" id="storage-percent-label">0% capacity utilized</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- Middle Content Section (Split Screen) -->
+        <div class="middle-section">
+          
+          <!-- Cameras Grid Card -->
+          <section id="cameras-section" class="panel-card glass">
+            <div class="panel-header">
+              <h2><i data-lucide="monitor-play"></i> Camera Feeds & Connection Health</h2>
+              <div style="display: flex; align-items: center; gap: 10px;">
+                <span style="font-size: 12px; color: var(--text-dim); font-weight: 500;">Master Rec:</span>
+                <label class="switch" title="Toggle Recording for ALL Cameras at Once">
+                  <input type="checkbox" id="master-recording-toggle">
+                  <span class="slider"></span>
+                </label>
+                <span class="live-tag">LIVE STATE</span>
+              </div>
+            </div>
+            <div class="camera-list" id="camera-list-container">
+              <div class="loading-spinner-container">
+                <div class="spinner"></div>
+                <p>Establishing ONVIF sockets...</p>
+              </div>
+            </div>
+          </section>
+
+          <div class="right-column-container">
+            <!-- Storage Space Gauge Panel -->
+            <section class="panel-card glass storage-panel">
+              <div class="panel-header">
+                <h2><i data-lucide="pie-chart"></i> Disk Allocation</h2>
+              </div>
+              <div class="storage-gauge-container">
+                <div class="circular-progress-container">
+                  <svg class="progress-ring" width="200" height="200">
+                    <circle class="progress-ring__circle-bg" stroke="rgba(255, 255, 255, 0.05)" stroke-width="12" fill="transparent" r="80" cx="100" cy="100"/>
+                    <circle class="progress-ring__circle" id="disk-progress-circle" stroke="#10b981" stroke-width="12" fill="transparent" r="80" cx="100" cy="100"/>
+                  </svg>
+                  <div class="progress-text-container">
+                    <span id="disk-percent-text">0%</span>
+                    <span class="progress-subtext">Filled</span>
+                  </div>
+                </div>
+                <div class="storage-meta">
+                  <div class="meta-item">
+                    <span class="dot green-dot"></span>
+                    <div>
+                      <p class="meta-title">Used Space</p>
+                      <p class="meta-value" id="storage-used-meta">0.00 GB</p>
+                    </div>
+                  </div>
+                  <div class="meta-item">
+                    <span class="dot grey-dot"></span>
+                    <div>
+                      <p class="meta-title">Maximum Allowed</p>
+                      <p class="meta-value" id="storage-limit-meta">10.00 GB</p>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </section>
+
+            <!-- Storage Location Manager Panel -->
+            <section class="panel-card glass drive-manager-panel">
+              <div class="panel-header">
+                <h2><i data-lucide="hard-drive"></i> Storage Drive Manager</h2>
+              </div>
+              <div class="drive-manager-body">
+                <p style="font-size: 13px; color: var(--text-muted); margin-bottom: 16px; line-height: 1.4;">
+                  Select a local or external hard drive partition to save surveillance footage:
+                </p>
+                <div class="drive-list" id="drive-list-container">
+                  <div class="loading-spinner-container" style="padding: 20px 0; gap: 8px;">
+                    <div class="spinner" style="width: 20px; height: 20px; border-width: 2px;"></div>
+                    <p style="font-size: 13px;">Scanning available drives...</p>
+                  </div>
+                </div>
+                
+                <div class="path-config-form" style="margin-top: 16px; border-top: 1px solid rgba(255, 255, 255, 0.05); padding-top: 16px;">
+                  <div class="form-group" style="margin-bottom: 16px;">
+                    <label for="folder-name-input" style="display: block; font-size: 12px; color: var(--text-muted); margin-bottom: 6px; font-weight: 500;">Surveillance Folder Name</label>
+                    <input type="text" id="folder-name-input" class="form-control" value="Recordings" placeholder="e.g. CCTV_Recordings" style="width: 100%; background: rgba(0, 0, 0, 0.2); border: 1px solid rgba(255, 255, 255, 0.08); border-radius: 8px; padding: 10px; color: #fff; font-family: var(--font-family); font-size: 14px; outline: none; transition: var(--transition);">
+                  </div>
+                  <button class="btn btn-primary" id="save-drive-btn" style="width: 100%; justify-content: center; padding: 10px;" disabled>
+                    <i data-lucide="save" style="width: 16px; height: 16px;"></i> Set Storage Drive
+                  </button>
+                </div>
+              </div>
+            </section>
+          </div>
+        </div>
+
+        <!-- Recordings Section -->
+        <section id="recordings-section" class="panel-card glass recordings-panel">
+          <div class="panel-header">
+            <h2><i data-lucide="folder-open"></i> Recording Library (surveillance segments)</h2>
+            <button class="btn btn-primary" id="refresh-recordings-btn">
+              <i data-lucide="refresh-cw"></i> Refresh Library
+            </button>
+          </div>
+          <!-- HEVC / H.265 Codec Playback Warning Banner -->
+          <div class="alert alert-warning" style="margin: 16px; background: rgba(245, 158, 11, 0.08); border: 1px solid rgba(245, 158, 11, 0.2); border-radius: 8px; padding: 12px 16px; display: flex; align-items: start; gap: 12px; font-size: 13px; line-height: 1.5; color: #f59e0b;">
+            <i data-lucide="alert-triangle" style="width: 20px; height: 20px; flex-shrink: 0; margin-top: 2px;"></i>
+            <div>
+              <strong>Windows & Web H.265 (HEVC) Playback Notice:</strong> 
+              Surveillance recordings using <code>H.265+ HEVC</code> compression or <code>Original Copy</code> (if the camera outputs H.265 directly) require the <em>HEVC Video Extensions</em> codec pack from the Microsoft Store to play in Chrome or Windows Media Player. 
+              <br/>
+              <span style="display: block; margin-top: 6px;">
+                💡 <strong>Solutions:</strong> 
+                1. Change the camera quality profile to <strong>H.264 (High, Medium, or Low)</strong> to generate video chunks that play on any PC and browser for free.
+                2. Or, use the free, open-source <strong><a href="https://www.videolan.org/" target="_blank" style="color: #60a5fa; text-decoration: underline; font-weight: 500;">VLC Media Player</a></strong> to play H.265 files without paying for any codec extension packs.
+              </span>
+            </div>
+          </div>
+          <div class="table-container">
+            <table class="recordings-table">
+              <thead>
+                <tr>
+                  <th>Camera Name</th>
+                  <th>Recording Timestamp</th>
+                  <th>Segment Filename</th>
+                  <th>File Size</th>
+                  <th>Action</th>
+                </tr>
+              </thead>
+              <tbody id="recordings-table-body">
+                <tr>
+                  <td colspan="5" style="text-align: center; color: var(--text-muted); padding: 40px 0;">
+                    Loading recordings library...
+                  </td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        </section>
+      </div>
+
+      <!-- Settings & Cameras View -->
+      <div class="settings-view-container" id="settings-view" style="display: none;">
+        <div class="middle-section" style="grid-template-columns: 2fr 1fr; align-items: start;">
+          
+          <!-- Cameras Configuration Card -->
+          <section class="panel-card glass">
+            <div class="panel-header">
+              <h2><i data-lucide="video"></i> Camera Configurations</h2>
+              <div style="display: flex; gap: 8px;">
+                <button class="btn btn-secondary" id="trigger-discover-btn">
+                  <i data-lucide="search"></i> Auto-Discover
+                </button>
+                <button class="btn btn-primary" id="trigger-add-camera-btn">
+                  <i data-lucide="plus"></i> Add Camera
+                </button>
+              </div>
+            </div>
+            <div class="table-container">
+              <table class="recordings-table">
+                <thead>
+                  <tr>
+                    <th>Camera Name</th>
+                    <th>IP Address / Port</th>
+                    <th>Username</th>
+                    <th>Password</th>
+                    <th>Actions</th>
+                  </tr>
+                </thead>
+                <tbody id="config-cameras-table-body">
+                  <!-- Dynamically populated configured cameras -->
+                  <tr>
+                    <td colspan="5" style="text-align: center; color: var(--text-muted); padding: 40px 0;">
+                      Loading camera configurations...
+                    </td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+          </section>
+
+          <!-- General Configuration Settings Card -->
+          <section class="panel-card glass">
+            <div class="panel-header">
+              <h2><i data-lucide="sliders"></i> System Settings</h2>
+            </div>
+            <form id="general-settings-form">
+              <div class="form-group" style="margin-bottom: 16px;">
+                <label for="max-storage-input" style="display: block; font-size: 13px; color: var(--text-muted); margin-bottom: 6px; font-weight: 500;">Max Storage Space (GB)</label>
+                <input type="number" id="max-storage-input" required min="1" step="0.5" style="width: 100%; background: rgba(0, 0, 0, 0.2); border: 1px solid rgba(255, 255, 255, 0.08); border-radius: 8px; padding: 10px; color: #fff; font-family: var(--font-family); font-size: 14px; outline: none; transition: var(--transition);">
+              </div>
+              <div class="form-group" style="margin-bottom: 16px;">
+                <label for="chunk-minutes-input" style="display: block; font-size: 13px; color: var(--text-muted); margin-bottom: 6px; font-weight: 500;">Video Chunk Duration (Minutes)</label>
+                <input type="number" id="chunk-minutes-input" required min="1" max="120" style="width: 100%; background: rgba(0, 0, 0, 0.2); border: 1px solid rgba(255, 255, 255, 0.08); border-radius: 8px; padding: 10px; color: #fff; font-family: var(--font-family); font-size: 14px; outline: none; transition: var(--transition);">
+              </div>
+              <button class="btn btn-primary" type="submit" id="save-settings-btn" style="width: 100%; justify-content: center; padding: 10px;">
+                <i data-lucide="save"></i> Save Settings
+              </button>
+            </form>
+          </section>
+        </div>
+      </div>
+    </main>
+  </div>
+
+  <!-- Video Playback Modal -->
+  <div class="modal" id="video-modal">
+    <div class="modal-overlay" onclick="closeModal()"></div>
+    <div class="modal-content glass">
+      <div class="modal-header">
+        <h3 id="modal-video-title">Camera Playback</h3>
+        <i data-lucide="x" class="close-btn" onclick="closeModal()"></i>
+      </div>
+      <div class="modal-body">
+        <video id="playback-video" controls autoplay>
+          Your browser does not support HTML5 video streaming.
+        </video>
+      </div>
+      <div class="modal-footer">
+        <p id="modal-video-meta">File details</p>
+        <button class="btn btn-secondary" onclick="closeModal()">Close Player</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Camera Form Modal (Add / Edit Camera Dialog) -->
+  <div class="modal" id="camera-modal">
+    <div class="modal-overlay" onclick="closeCameraModal()"></div>
+    <div class="modal-content glass" style="max-width: 850px; width: 90%;">
+      <div class="modal-header">
+        <h3 id="camera-modal-title">Add New Camera</h3>
+        <i data-lucide="x" class="close-btn" onclick="closeCameraModal()"></i>
+      </div>
+      <form id="camera-config-form">
+        <div class="modal-body" style="background: transparent; aspect-ratio: auto; padding: 24px; display: grid; grid-template-columns: 1.1fr 1fr; gap: 24px;">
+          
+          <!-- Left Column: Form Fields -->
+          <div class="form-fields">
+            <div class="form-group" style="margin-bottom: 16px;">
+              <label for="cam-name" style="display: block; font-size: 13px; color: var(--text-muted); margin-bottom: 6px; font-weight: 500;">Camera Name (Unique, alphanumeric)</label>
+              <input type="text" id="cam-name" required placeholder="e.g. Front-Door" pattern="^[a-zA-Z0-9\-_]+$" title="Only alphanumeric, hyphens, and underscores are allowed" style="width: 100%; background: rgba(0, 0, 0, 0.2); border: 1px solid rgba(255, 255, 255, 0.08); border-radius: 8px; padding: 10px; color: #fff; font-family: var(--font-family); font-size: 14px; outline: none; transition: var(--transition);">
+            </div>
+            <div class="form-group" style="margin-bottom: 16px;">
+              <label for="cam-ip" style="display: block; font-size: 13px; color: var(--text-muted); margin-bottom: 6px; font-weight: 500;">Camera IP Address</label>
+              <input type="text" id="cam-ip" required placeholder="e.g. 192.168.0.52" style="width: 100%; background: rgba(0, 0, 0, 0.2); border: 1px solid rgba(255, 255, 255, 0.08); border-radius: 8px; padding: 10px; color: #fff; font-family: var(--font-family); font-size: 14px; outline: none; transition: var(--transition);">
+            </div>
+            <div class="form-group" style="margin-bottom: 16px;">
+              <label for="cam-port" style="display: block; font-size: 13px; color: var(--text-muted); margin-bottom: 6px; font-weight: 500;">ONVIF Port</label>
+              <input type="number" id="cam-port" required value="80" style="width: 100%; background: rgba(0, 0, 0, 0.2); border: 1px solid rgba(255, 255, 255, 0.08); border-radius: 8px; padding: 10px; color: #fff; font-family: var(--font-family); font-size: 14px; outline: none; transition: var(--transition);">
+            </div>
+            <div class="form-group" style="margin-bottom: 16px;">
+              <label for="cam-username" style="display: block; font-size: 13px; color: var(--text-muted); margin-bottom: 6px; font-weight: 500;">ONVIF Username</label>
+              <input type="text" id="cam-username" required value="admin" style="width: 100%; background: rgba(0, 0, 0, 0.2); border: 1px solid rgba(255, 255, 255, 0.08); border-radius: 8px; padding: 10px; color: #fff; font-family: var(--font-family); font-size: 14px; outline: none; transition: var(--transition);">
+            </div>
+            <div class="form-group" style="margin-bottom: 16px;">
+              <label for="cam-password" style="display: block; font-size: 13px; color: var(--text-muted); margin-bottom: 6px; font-weight: 500;">ONVIF Password</label>
+              <input type="password" id="cam-password" placeholder="Leave empty if none" style="width: 100%; background: rgba(0, 0, 0, 0.2); border: 1px solid rgba(255, 255, 255, 0.08); border-radius: 8px; padding: 10px; color: #fff; font-family: var(--font-family); font-size: 14px; outline: none; transition: var(--transition);">
+            </div>
+            <div class="form-group" style="margin-bottom: 16px;">
+              <label for="cam-compression" style="display: block; font-size: 13px; color: var(--text-muted); margin-bottom: 6px; font-weight: 500;">Video Encoding / Compression</label>
+              <select id="cam-compression" style="width: 100%; background: rgba(0, 0, 0, 0.2); border: 1px solid rgba(255, 255, 255, 0.08); border-radius: 8px; padding: 10px; color: #fff; font-family: var(--font-family); font-size: 14px; outline: none; transition: var(--transition);">
+                <option value="copy" selected>Original Stream Copy (Low CPU / Requires H.264 camera stream to play in Chrome)</option>
+                <option value="high">High Quality H.264 (Transcode / Browser Playable)</option>
+                <option value="medium">Medium Quality H.264 (Recommended / Transcode / Browser Playable)</option>
+                <option value="low">Low Quality H.264 (Max Compression / Transcode / Browser Playable)</option>
+                <option value="hevc">H.265+ HEVC (Maximum Storage Saving / Transcode / Non-Chrome Playable)</option>
+              </select>
+              <span style="font-size: 11px; color: var(--text-dim); display: block; margin-top: 5px; line-height: 1.4;">
+                * Note: If your camera is configured to H.265 (HEVC) in firmware, select H.264 Transcode to preview recorded videos directly in Google Chrome.
+              </span>
+            </div>
+            <div class="form-group" style="margin-bottom: 16px; display: flex; align-items: center; gap: 10px;">
+              <input type="checkbox" id="cam-enabled" checked style="width: 18px; height: 18px; accent-color: var(--primary);">
+              <label for="cam-enabled" style="margin-bottom: 0; font-weight: 500; cursor: pointer; color: #fff;">Enable Continuous Recording</label>
+            </div>
+          </div>
+
+          <!-- Right Column: Settings Guide -->
+          <div class="config-guide-box" style="background: rgba(255,255,255,0.015); border: 1px solid rgba(255,255,255,0.05); border-radius: 12px; padding: 18px; font-size: 13px; line-height: 1.5; color: var(--text-muted); max-height: 380px; overflow-y: auto;">
+            <h4 style="color: var(--text-main); margin-bottom: 10px; font-size: 14px; display: flex; align-items: center; gap: 6px; font-weight: 600;">
+              <i data-lucide="help-circle" style="color: var(--primary); width: 16px; height: 16px;"></i> ONVIF Configuration Steps
+            </h4>
+            
+            <p style="margin-bottom: 12px; font-size: 12.5px;">
+              To connect successfully, you must configure the following settings inside your camera's admin web portal:
+            </p>
+
+            <ul style="padding-left: 14px; margin-bottom: 16px; display: flex; flex-direction: column; gap: 10px; list-style-type: decimal;">
+              <li>
+                <strong style="color: var(--text-main);">Enable ONVIF Protocol:</strong>
+                <div style="font-size: 12px; color: var(--text-dim); margin-top: 2px;">
+                  Many cameras (Hikvision, Prama, Dahua) disable ONVIF access by default. In the camera's web UI:
+                  Go to <code>Network -> Advanced Settings -> Integration Protocol</code>, and check <strong>"Enable ONVIF"</strong>.
+                </div>
+              </li>
+              <li>
+                <strong style="color: var(--text-main);">Add an ONVIF User:</strong>
+                <div style="font-size: 12px; color: var(--text-dim); margin-top: 2px;">
+                  In the same ONVIF tab, click <strong>"Add"</strong> to create a dedicated user (e.g. <code>onvif</code> or <code>admin</code>) and set the type to <strong>Media/Administrator</strong>. <em>Using your camera's primary web admin user password directly will fail unless registered as an ONVIF user here.</em>
+                </div>
+              </li>
+              <li>
+                <strong style="color: var(--text-main);">Confirm the ONVIF Port:</strong>
+                <div style="font-size: 12px; color: var(--text-dim); margin-top: 2px;">
+                  Typically, Hikvision and Prama use <strong>80</strong> (or 8000/8080/8899). Dahua uses <strong>80</strong> or <strong>37777</strong>. CP Plus often uses <strong>8899</strong>. Check your camera's network port settings page.
+                </div>
+              </li>
+              <li>
+                <strong style="color: var(--text-main);">Test local reachability:</strong>
+                <div style="font-size: 12px; color: var(--text-dim); margin-top: 2px;">
+                  Ensure your PC is on the same local subnet as the camera IP (e.g., both on `192.168.0.x`).
+                </div>
+              </li>
+            </ul>
+
+            <div style="background: rgba(16, 185, 129, 0.05); border: 1px solid rgba(16, 185, 129, 0.15); border-radius: 8px; padding: 10px; color: #10b981; font-size: 12px; display: flex; gap: 8px; align-items: start;">
+              <i data-lucide="info" style="width: 16px; height: 16px; flex-shrink: 0; margin-top: 2px;"></i>
+              <span>Saving immediately restarts recording streams. FFmpeg writes segments to your selected drive location in real-time.</span>
+            </div>
+          </div>
+
+        </div>
+        <div class="modal-footer">
+          <button class="btn btn-secondary" type="button" onclick="closeCameraModal()">Cancel</button>
+          <button class="btn btn-primary" type="submit" id="save-camera-btn">Save Camera</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- ONVIF Network Discovery Modal -->
+  <div class="modal" id="discover-modal">
+    <div class="modal-overlay" onclick="closeDiscoverModal()"></div>
+    <div class="modal-content glass" style="max-width: 600px;">
+      <div class="modal-header">
+        <h3>ONVIF Camera Auto-Discovery</h3>
+        <i data-lucide="x" class="close-btn" onclick="closeDiscoverModal()"></i>
+      </div>
+      <div class="modal-body" style="background: transparent; aspect-ratio: auto; padding: 24px; max-height: 400px; overflow-y: auto; display: block;">
+        <div id="discover-results-container">
+          <!-- Discovery scan results will load here -->
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button class="btn btn-secondary" onclick="closeDiscoverModal()">Close</button>
+        <button class="btn btn-primary" id="discover-retry-btn"><i data-lucide="refresh-cw"></i> Scan Subnet</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Live Preview Modal -->
+  <div class="modal" id="live-preview-modal">
+    <div class="modal-overlay" onclick="closeLivePreviewModal()"></div>
+    <div class="modal-content glass" style="max-width: 640px; width: 90%;">
+      <div class="modal-header">
+        <h3 id="live-preview-title">Camera Live View</h3>
+        <i data-lucide="x" class="close-btn" onclick="closeLivePreviewModal()"></i>
+      </div>
+      <div class="modal-body" style="background: #000; text-align: center; display: flex; align-items: center; justify-content: center; min-height: 360px; padding: 0; position: relative;">
+        <img id="live-preview-img" src="" alt="Loading camera live stream..." style="max-width: 100%; max-height: 480px; object-fit: contain; display: block; border-radius: 4px;">
+        <div id="live-preview-loader" class="loading-spinner-container" style="position: absolute; display: flex; flex-direction: column; align-items: center; justify-content: center; background: rgba(0,0,0,0.85); width: 100%; height: 100%; border-radius: 4px;">
+          <div class="spinner"></div>
+          <p style="margin-top: 8px; font-size: 13px;">Connecting to camera RTSP...</p>
+        </div>
+      </div>
+      <div class="modal-footer" style="display: flex; justify-content: space-between; align-items: center; padding: 16px 20px;">
+        <span style="font-size: 12px; color: var(--text-muted); display: flex; align-items: center; gap: 6px;">
+          <span class="pulse-dot green" style="animation: pulse 1.5s infinite;"></span> Fast JPEG Refresh (1.5s interval)
+        </span>
+        <button class="btn btn-secondary" onclick="closeLivePreviewModal()">Close Live View</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- App logic script -->
+  <script src="app.js"></script>
+</body>
+</html>

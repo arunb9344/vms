@@ -1,0 +1,767 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>License Manager - EyeTech Owner Console</title>
+  <!-- Google Fonts: Outfit -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+  <!-- Lucide Icons -->
+  <script src="https://unpkg.com/lucide@latest"></script>
+  <style>
+    :root {
+      --bg-primary: #0b0f19;
+      --bg-surface: #151c2c;
+      --accent: #2563eb;
+      --accent-hover: #1d4ed8;
+      --text-primary: #f3f4f6;
+      --text-secondary: #9ca3af;
+      --border-color: #1f2937;
+      --success: #10b981;
+      --error: #ef4444;
+    }
+
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+
+    body {
+      font-family: 'Outfit', sans-serif;
+      background: var(--bg-primary);
+      color: var(--text-primary);
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+    }
+
+    /* Header */
+    header {
+      background: var(--bg-surface);
+      border-bottom: 1px solid var(--border-color);
+      padding: 16px 40px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+
+    .brand {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+
+    .brand-icon {
+      color: var(--accent);
+    }
+
+    .brand h2 {
+      font-size: 20px;
+      font-weight: 600;
+    }
+
+    .logout-btn {
+      background: transparent;
+      border: 1px solid var(--border-color);
+      color: var(--text-secondary);
+      border-radius: 8px;
+      padding: 8px 16px;
+      font-size: 13px;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      transition: all 0.2s;
+    }
+
+    .logout-btn:hover {
+      border-color: var(--error);
+      color: var(--error);
+    }
+
+    /* Container */
+    .main-container {
+      max-width: 1200px;
+      width: 100%;
+      margin: 40px auto;
+      padding: 0 20px;
+      display: flex;
+      flex-direction: column;
+      gap: 30px;
+      flex: 1;
+    }
+
+    /* Card Panels */
+    .card {
+      background: var(--bg-surface);
+      border: 1px solid var(--border-color);
+      border-radius: 12px;
+      padding: 24px;
+    }
+
+    .card-title {
+      font-size: 18px;
+      font-weight: 600;
+      margin-bottom: 20px;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .card-title i {
+      color: var(--accent);
+    }
+
+    /* Generate Form */
+    .generate-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr auto;
+      gap: 16px;
+      align-items: flex-end;
+    }
+
+    @media (max-width: 768px) {
+      .generate-grid {
+        grid-template-columns: 1fr;
+      }
+    }
+
+    .form-group {
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+    }
+
+    label {
+      font-size: 12px;
+      font-weight: 500;
+      color: var(--text-secondary);
+    }
+
+    input[type="text"], input[type="password"] {
+      background: #111827;
+      border: 1px solid var(--border-color);
+      color: var(--text-primary);
+      padding: 12px;
+      border-radius: 8px;
+      font-size: 14px;
+      transition: border-color 0.2s;
+    }
+
+    input[type="text"]:focus, input[type="password"]:focus {
+      outline: none;
+      border-color: var(--accent);
+    }
+
+    .btn {
+      background: var(--accent);
+      color: white;
+      border: none;
+      padding: 12px 24px;
+      font-size: 14px;
+      font-weight: 600;
+      border-radius: 8px;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+      transition: background 0.2s;
+      height: 45px;
+    }
+
+    .btn:hover {
+      background: var(--accent-hover);
+    }
+
+    .btn-danger {
+      background: rgba(239, 68, 68, 0.15);
+      color: var(--error);
+      border: 1px solid rgba(239, 68, 68, 0.2);
+    }
+
+    .btn-danger:hover {
+      background: var(--error);
+      color: white;
+    }
+
+    /* Generated Output Card */
+    .result-box {
+      margin-top: 20px;
+      background: rgba(37, 99, 235, 0.05);
+      border: 1px dashed var(--accent);
+      border-radius: 8px;
+      padding: 16px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      animation: fadeIn 0.3s ease-in-out;
+    }
+
+    @keyframes fadeIn {
+      from { opacity: 0; transform: translateY(-5px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+
+    .key-output {
+      font-family: monospace;
+      font-size: 18px;
+      font-weight: bold;
+      color: var(--accent);
+      letter-spacing: 1px;
+    }
+
+    /* Database Search & Table */
+    .db-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 20px;
+      gap: 16px;
+    }
+
+    @media (max-width: 768px) {
+      .db-header {
+        flex-direction: column;
+        align-items: stretch;
+      }
+    }
+
+    .search-wrapper {
+      position: relative;
+      max-width: 320px;
+      width: 100%;
+    }
+
+    .search-wrapper i {
+      position: absolute;
+      left: 12px;
+      top: 50%;
+      transform: translateY(-50%);
+      color: var(--text-secondary);
+    }
+
+    .search-wrapper input {
+      width: 100%;
+      padding-left: 36px;
+    }
+
+    .table-container {
+      overflow-x: auto;
+    }
+
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      text-align: left;
+    }
+
+    th, td {
+      padding: 14px 16px;
+      border-bottom: 1px solid var(--border-color);
+      font-size: 14px;
+    }
+
+    th {
+      color: var(--text-secondary);
+      font-weight: 500;
+      background: rgba(255, 255, 255, 0.02);
+    }
+
+    .mono {
+      font-family: monospace;
+      font-size: 13px;
+    }
+
+    .actions-cell {
+      display: flex;
+      gap: 10px;
+    }
+
+    .action-btn {
+      background: transparent;
+      border: 1px solid var(--border-color);
+      color: var(--text-secondary);
+      border-radius: 6px;
+      width: 32px;
+      height: 32px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      cursor: pointer;
+      transition: all 0.2s;
+    }
+
+    .action-btn:hover {
+      background: rgba(255, 255, 255, 0.05);
+      border-color: var(--text-primary);
+      color: var(--text-primary);
+    }
+
+    .action-btn.delete:hover {
+      background: rgba(239, 68, 68, 0.1);
+      border-color: var(--error);
+      color: var(--error);
+    }
+
+    .empty-state {
+      text-align: center;
+      color: var(--text-secondary);
+      padding: 40px 0;
+      font-size: 14px;
+    }
+
+    /* Auth Dialog Box */
+    .login-overlay {
+      position: fixed;
+      top: 0;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      background: rgba(11, 15, 25, 0.95);
+      backdrop-filter: blur(8px);
+      z-index: 1000;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .login-card {
+      background: var(--bg-surface);
+      border: 1px solid var(--border-color);
+      border-radius: 16px;
+      width: 100%;
+      max-width: 400px;
+      padding: 40px 30px;
+      text-align: center;
+      box-shadow: 0 10px 25px rgba(0, 0, 0, 0.5);
+    }
+
+    .login-card h3 {
+      font-size: 20px;
+      margin-bottom: 8px;
+    }
+
+    .login-card p {
+      font-size: 13px;
+      color: var(--text-secondary);
+      margin-bottom: 24px;
+    }
+
+    .login-card .form-group {
+      text-align: left;
+      margin-bottom: 20px;
+    }
+
+    /* Toast Notification */
+    .toast {
+      position: fixed;
+      bottom: 24px;
+      right: 24px;
+      background: var(--bg-surface);
+      border: 1px solid var(--border-color);
+      border-left: 4px solid var(--accent);
+      border-radius: 8px;
+      padding: 16px 20px;
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      box-shadow: 0 10px 15px -3px rgba(0,0,0,0.5);
+      z-index: 2000;
+      animation: slideIn 0.3s ease-out;
+      display: none;
+    }
+
+    @keyframes slideIn {
+      from { transform: translateX(120%); }
+      to { transform: translateX(0); }
+    }
+  </style>
+</head>
+<body>
+
+  <!-- Password Login Guard Overlay -->
+  <div class="login-overlay" id="login-overlay">
+    <div class="login-card">
+      <div class="brand-icon-wrapper" style="width: 56px; height: 56px; background: rgba(37,99,235,0.1); color: var(--accent); border-radius: 50%; display: flex; align-items: center; justify-content: center; margin: 0 auto 16px;">
+        <i data-lucide="lock" style="width: 24px; height: 24px;"></i>
+      </div>
+      <h3>Administrator Login</h3>
+      <p>Please enter your password to access the license manager.</p>
+      <form id="login-form">
+        <div class="form-group">
+          <label for="admin-password">Console Password</label>
+          <div style="position: relative; display: flex; align-items: center;">
+            <input type="password" id="admin-password" placeholder="••••••••" required autocomplete="current-password" style="width: 100%; padding-right: 40px;">
+            <button type="button" id="toggle-pwd-btn" style="position: absolute; right: 10px; background: transparent; border: none; color: var(--text-secondary); cursor: pointer; display: flex; align-items: center; justify-content: center;">
+              <i data-lucide="eye" style="width: 18px; height: 18px;"></i>
+            </button>
+          </div>
+        </div>
+        <button type="submit" class="btn" style="width: 100%;">Unlock Console</button>
+      </form>
+      <div id="login-error" style="color: var(--error); font-size: 13px; margin-top: 14px; display: none;"></div>
+    </div>
+  </div>
+
+  <!-- Main Portal UI -->
+  <header>
+    <div class="brand">
+      <i data-lucide="key-round" class="brand-icon"></i>
+      <h2>EyeTech VMS - Owner License Console</h2>
+    </div>
+    <button class="logout-btn" id="logout-btn">
+      <i data-lucide="log-out" style="width: 14px; height: 14px;"></i>
+      Logout
+    </button>
+  </header>
+
+  <div class="main-container">
+    
+    <!-- Generate License Key -->
+    <div class="card">
+      <div class="card-title">
+        <i data-lucide="plus-circle" style="width: 18px; height: 18px;"></i>
+        Generate Activation Key
+      </div>
+      <form id="generate-form" class="generate-grid">
+        <div class="form-group">
+          <label for="customer-name">Customer Name / Setup Location</label>
+          <input type="text" id="customer-name" placeholder="e.g. Ajith Shop Setup" required autocomplete="off">
+        </div>
+        <div class="form-group">
+          <label for="hardware-id">Customer Hardware ID</label>
+          <input type="text" id="hardware-id" placeholder="EYETECH-XXXX-XXXX" required autocomplete="off">
+        </div>
+        <button type="submit" class="btn">
+          <i data-lucide="sparkles" style="width: 16px; height: 16px;"></i>
+          Generate Key
+        </button>
+      </form>
+
+      <!-- Key Output Area -->
+      <div class="result-box" id="result-box" style="display: none;">
+        <div>
+          <label style="display: block; margin-bottom: 2px;">Generated Activation Key:</label>
+          <span class="key-output" id="generated-key-output">ET-VMS-XXXX-XXXX-XXXX</span>
+        </div>
+        <button class="btn" id="copy-generated-btn" style="height: 38px; padding: 0 16px; font-size: 13px;">
+          <i data-lucide="copy" style="width: 14px; height: 14px;"></i>
+          Copy Key
+        </button>
+      </div>
+    </div>
+
+    <!-- License Issued Log Database -->
+    <div class="card">
+      <div class="db-header">
+        <div class="card-title" style="margin-bottom: 0;">
+          <i data-lucide="database" style="width: 18px; height: 18px;"></i>
+          Licenses Database Logs
+        </div>
+        <div class="search-wrapper">
+          <i data-lucide="search" style="width: 16px; height: 16px;"></i>
+          <input type="text" id="search-input" placeholder="Search by customer or hardware ID..." autocomplete="off">
+        </div>
+      </div>
+
+      <div class="table-container">
+        <table id="licenses-table">
+          <thead>
+            <tr>
+              <th>Customer Name</th>
+              <th>Hardware ID</th>
+              <th>Activation Key</th>
+              <th>Date Created</th>
+              <th>Actions</th>
+            </tr>
+          </thead>
+          <tbody id="table-body">
+            <!-- Dynamic data injected here -->
+          </tbody>
+        </table>
+        <div class="empty-state" id="empty-state" style="display: none;">
+          No license keys issued yet. Use the tool above to generate one.
+        </div>
+      </div>
+    </div>
+
+  </div>
+
+  <!-- Toast Alert -->
+  <div class="toast" id="toast">
+    <i data-lucide="info" style="width: 18px; height: 18px; color: var(--accent);" id="toast-icon"></i>
+    <span id="toast-text">Toast Message</span>
+  </div>
+
+  <script>
+    // Initialize Lucide Icons
+    lucide.createIcons();
+
+    const loginOverlay = document.getElementById('login-overlay');
+    const loginForm = document.getElementById('login-form');
+    const adminPasswordInput = document.getElementById('admin-password');
+    const togglePwdBtn = document.getElementById('toggle-pwd-btn');
+    const loginError = document.getElementById('login-error');
+    const logoutBtn = document.getElementById('logout-btn');
+
+    // Toggle password visibility
+    togglePwdBtn.addEventListener('click', () => {
+      const type = adminPasswordInput.getAttribute('type') === 'password' ? 'text' : 'password';
+      adminPasswordInput.setAttribute('type', type);
+      const icon = togglePwdBtn.querySelector('i');
+      if (type === 'password') {
+        icon.setAttribute('data-lucide', 'eye');
+      } else {
+        icon.setAttribute('data-lucide', 'eye-off');
+      }
+      lucide.createIcons();
+    });
+
+    const generateForm = document.getElementById('generate-form');
+    const customerNameInput = document.getElementById('customer-name');
+    const hardwareIdInput = document.getElementById('hardware-id');
+    const resultBox = document.getElementById('result-box');
+    const generatedKeyOutput = document.getElementById('generated-key-output');
+    const copyGeneratedBtn = document.getElementById('copy-generated-btn');
+
+    const searchInput = document.getElementById('search-input');
+    const tableBody = document.getElementById('table-body');
+    const emptyState = document.getElementById('empty-state');
+
+    const toast = document.getElementById('toast');
+    const toastText = document.getElementById('toast-text');
+
+    let allLicenses = [];
+
+    // Local Storage Password Persistence Check
+    let adminPassword = localStorage.getItem('eyetech_admin_password') || '';
+
+    // Show toast message
+    function showToast(message, type = 'info') {
+      toastText.textContent = message;
+      const icon = document.getElementById('toast-icon');
+      if (type === 'success') {
+        toast.style.borderLeftColor = 'var(--success)';
+        icon.style.color = 'var(--success)';
+        icon.setAttribute('data-lucide', 'check-circle');
+      } else if (type === 'error') {
+        toast.style.borderLeftColor = 'var(--error)';
+        icon.style.color = 'var(--error)';
+        icon.setAttribute('data-lucide', 'alert-circle');
+      } else {
+        toast.style.borderLeftColor = 'var(--accent)';
+        icon.style.color = 'var(--accent)';
+        icon.setAttribute('data-lucide', 'info');
+      }
+      lucide.createIcons();
+
+      toast.style.display = 'flex';
+      setTimeout(() => {
+        toast.style.display = 'none';
+      }, 3000);
+    }
+
+    // Try opening console with stored password
+    if (adminPassword) {
+      testPassword(adminPassword);
+    }
+
+    // Password verification request
+    async function testPassword(password) {
+      try {
+        const res = await fetch('/api/owner/login', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ password })
+        });
+        if (res.ok) {
+          adminPassword = password;
+          localStorage.setItem('eyetech_admin_password', password);
+          loginOverlay.style.display = 'none';
+          loadLicenses();
+        } else {
+          loginOverlay.style.display = 'flex';
+          localStorage.removeItem('eyetech_admin_password');
+        }
+      } catch (e) {
+        console.error(e);
+        loginOverlay.style.display = 'flex';
+      }
+    }
+
+    // Login Form Submission
+    loginForm.addEventListener('submit', async (e) => {
+      e.preventDefault();
+      const pwd = adminPasswordInput.value;
+      loginError.style.display = 'none';
+
+      try {
+        const res = await fetch('/api/owner/login', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ password: pwd })
+        });
+        const data = await res.json();
+        if (res.ok && data.success) {
+          adminPassword = pwd;
+          localStorage.setItem('eyetech_admin_password', pwd);
+          loginOverlay.style.display = 'none';
+          showToast('Access Granted.', 'success');
+          loadLicenses();
+        } else {
+          loginError.textContent = data.message || 'Incorrect password.';
+          loginError.style.display = 'block';
+        }
+      } catch (err) {
+        loginError.textContent = 'Server connection error.';
+        loginError.style.display = 'block';
+      }
+    });
+
+    // Logout
+    logoutBtn.addEventListener('click', () => {
+      localStorage.removeItem('eyetech_admin_password');
+      window.location.reload();
+    });
+
+    // Load issued licenses from server
+    async function loadLicenses() {
+      try {
+        const res = await fetch('/api/owner/licenses', {
+          headers: { 'x-admin-password': adminPassword }
+        });
+        if (res.ok) {
+          allLicenses = await res.json();
+          renderLicenses(allLicenses);
+        } else {
+          showToast('Failed to load database logs.', 'error');
+        }
+      } catch (err) {
+        showToast('Communication error reading database logs.', 'error');
+      }
+    }
+
+    // Render Licenses Table
+    function renderLicenses(licenses) {
+      tableBody.innerHTML = '';
+      if (licenses.length === 0) {
+        emptyState.style.display = 'block';
+        return;
+      }
+      emptyState.style.display = 'none';
+
+      licenses.forEach(lic => {
+        const tr = document.createElement('tr');
+        tr.innerHTML = `
+          <td><strong>${escapeHtml(lic.customerName)}</strong></td>
+          <td class="mono">${escapeHtml(lic.hardwareId)}</td>
+          <td class="mono" style="color: var(--accent); font-weight: 500;">${lic.activationKey}</td>
+          <td>${lic.created}</td>
+          <td class="actions-cell">
+            <button class="action-btn" title="Copy Key" onclick="copyKeyText('${lic.activationKey}')">
+              <i data-lucide="copy" style="width: 14px; height: 14px;"></i>
+            </button>
+            <button class="action-btn delete" title="Delete Log Record" onclick="deleteLicenseRecord('${lic.id}')">
+              <i data-lucide="trash-2" style="width: 14px; height: 14px;"></i>
+            </button>
+          </td>
+        `;
+        tableBody.appendChild(tr);
+      });
+      lucide.createIcons();
+    }
+
+    // HTML escape utility
+    function escapeHtml(text) {
+      return text
+        .replace(/&/g, "&amp;")
+        .replace(/</g, "&lt;")
+        .replace(/>/g, "&gt;")
+        .replace(/"/g, "&quot;")
+        .replace(/'/g, "&#039;");
+    }
+
+    // Copy Utility for Action buttons
+    window.copyKeyText = function(key) {
+      navigator.clipboard.writeText(key);
+      showToast('License Key copied to clipboard!', 'success');
+    }
+
+    // Delete Record handler
+    window.deleteLicenseRecord = async function(id) {
+      if (!confirm('Are you sure you want to delete this license record from logs? (This does not deactivate the customer\'s local software if already activated)')) {
+        return;
+      }
+
+      try {
+        const res = await fetch(`/api/owner/licenses/${id}`, {
+          method: 'DELETE',
+          headers: { 'x-admin-password': adminPassword }
+        });
+        if (res.ok) {
+          showToast('Record deleted successfully.', 'success');
+          loadLicenses();
+        } else {
+          showToast('Failed to delete license record.', 'error');
+        }
+      } catch (err) {
+        showToast('Communication error deleting record.', 'error');
+      }
+    }
+
+    // Generate Key Form submit handler
+    generateForm.addEventListener('submit', async (e) => {
+      e.preventDefault();
+      const customerName = customerNameInput.value.trim();
+      const hardwareId = hardwareIdInput.value.trim().toUpperCase();
+
+      try {
+        const res = await fetch('/api/owner/generate', {
+          method: 'POST',
+          headers: { 
+            'Content-Type': 'application/json',
+            'x-admin-password': adminPassword
+          },
+          body: JSON.stringify({ customerName, hardwareId })
+        });
+
+        const data = await res.json();
+        if (res.ok && data.success) {
+          generatedKeyOutput.textContent = data.license.activationKey;
+          resultBox.style.display = 'flex';
+          showToast('Key generated successfully!', 'success');
+          loadLicenses();
+          customerNameInput.value = '';
+          hardwareIdInput.value = '';
+        } else {
+          showToast(data.message || 'Failed to generate key.', 'error');
+        }
+      } catch (err) {
+        showToast('Communication error generating key.', 'error');
+      }
+    });
+
+    // Copy generated key button
+    copyGeneratedBtn.addEventListener('click', () => {
+      const key = generatedKeyOutput.textContent;
+      navigator.clipboard.writeText(key);
+      showToast('Key copied!', 'success');
+    });
+
+    // Live search filter
+    searchInput.addEventListener('input', (e) => {
+      const q = e.target.value.toLowerCase();
+      const filtered = allLicenses.filter(lic => 
+        lic.customerName.toLowerCase().includes(q) || 
+        lic.hardwareId.toLowerCase().includes(q) || 
+        lic.activationKey.toLowerCase().includes(q)
+      );
+      renderLicenses(filtered);
+    });
+  </script>
+</body>
+</html>

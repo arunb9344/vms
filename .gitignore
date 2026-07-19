@@ -1,0 +1,21 @@
+# Dependency directories
+node_modules/
+
+# Compiled outputs and installers
+dist/
+installer_output/
+
+# Portable binary
+node.exe
+
+# Local license keys & logs (Saves your customer keys from leaking!)
+license.json
+licenses_issued.json
+
+# Local recordings folder
+Recordings/
+Recordings_Test/
+
+# OS specific files
+.DS_Store
+Thumbs.db
