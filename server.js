@@ -44,7 +44,10 @@ function generateActivationKey(hardwareId) {
 }
 
 function checkLicense() {
-  const licensePath = path.join(path.resolve(), 'license.json');
+  const licensePath = process.env.APPDATA 
+    ? path.join(process.env.APPDATA, 'EyeTechVMS', 'license.json')
+    : path.join(path.resolve(), 'license.json');
+
   if (!fs.existsSync(licensePath)) {
     isActivated = false;
     return false;
@@ -460,8 +463,11 @@ export function startWebServer(config, recorders, onStoragePathChange) {
     const expectedKey = generateActivationKey(localHardwareId);
 
     if (licenseKey.trim() === expectedKey) {
-      const licensePath = path.join(path.resolve(), 'license.json');
+      const licensePath = process.env.APPDATA 
+        ? path.join(process.env.APPDATA, 'EyeTechVMS', 'license.json')
+        : path.join(path.resolve(), 'license.json');
       try {
+        fs.ensureDirSync(path.dirname(licensePath));
         fs.writeJsonSync(licensePath, { licenseKey: licenseKey.trim() });
         isActivated = true;
         console.log('[License] Activation key matched. VMS unlocked!');

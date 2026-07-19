@@ -9,7 +9,9 @@ import { startWebServer } from './server.js';
 const LICENSE_SECRET = 'eyetech_vms_securities_secret_passphrase_2026';
 
 function isLicenseValid() {
-  const licensePath = path.resolve('./license.json');
+  const licensePath = process.env.APPDATA 
+    ? path.join(process.env.APPDATA, 'EyeTechVMS', 'license.json')
+    : path.resolve('./license.json');
   if (!fs.existsSync(licensePath)) return false;
   try {
     const licenseData = fs.readJsonSync(licensePath);
