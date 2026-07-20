@@ -2,6 +2,7 @@ import ffmpeg from 'fluent-ffmpeg';
 import ffmpegStatic from 'ffmpeg-static';
 import { getCameraRtspUri } from './onvif.js';
 import path from 'path';
+import fs from 'fs-extra';
 
 // Tell fluent-ffmpeg to use the precompiled static binary
 ffmpeg.setFfmpegPath(ffmpegStatic);
@@ -51,8 +52,13 @@ export class CameraRecorder {
     const { storage_path, chunk_minutes } = this.config;
     const segmentTimeSec = chunk_minutes * 60;
 
-    // Output path pattern using strftime formatting for dynamic file names with compression details
-    const outputPath = path.join(storage_path, `${name}_${compression}_%Y-%m-%d_%I%M%p.mp4`);
+    // Create a dedicated subfolder for the camera
+    const cleanCameraDirName = name.replace(/[^a-zA-Z0-9_\-]/g, '_');
+    const cameraFolder = path.join(storage_path, cleanCameraDirName);
+    fs.ensureDirSync(cameraFolder);
+
+    // Output path pattern using strftime formatting inside the camera subfolder
+    const outputPath = path.join(cameraFolder, `${name}_${compression}_%Y-%m-%d_%I%M%p.mp4`);
 
     console.log(`[Recorder] [${name}] Spawning FFmpeg process.`);
     console.log(`[Recorder] [${name}] Target output template: ${outputPath}`);

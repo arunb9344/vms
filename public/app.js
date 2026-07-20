@@ -28,6 +28,7 @@ const configCamerasTableBody = document.getElementById('config-cameras-table-bod
 const generalSettingsForm = document.getElementById('general-settings-form');
 const maxStorageInput = document.getElementById('max-storage-input');
 const chunkMinutesInput = document.getElementById('chunk-minutes-input');
+const autoOverwriteInput = document.getElementById('auto-overwrite-input');
 const triggerAddCameraBtn = document.getElementById('trigger-add-camera-btn');
 const triggerDiscoverBtn = document.getElementById('trigger-discover-btn');
 const masterRecordingToggle = document.getElementById('master-recording-toggle');
@@ -247,6 +248,9 @@ async function fetchSettings() {
     // Fill settings inputs
     maxStorageInput.value = data.max_storage_gb;
     chunkMinutesInput.value = data.chunk_minutes;
+    if (autoOverwriteInput) {
+      autoOverwriteInput.checked = data.auto_overwrite !== false;
+    }
     
     // Render configured cameras list
     renderConfiguredCameras(data.cameras || []);
@@ -596,7 +600,7 @@ function renderRecordings(recordings) {
             <i data-lucide="play" style="width: 14px; height: 14px; margin-right: 0;"></i> Play
           </button>
         ` : `
-          <button class="btn btn-play" onclick="playVideo('${rec.filename}', '${rec.cameraName}', '${rec.created}', '${rec.sizeMb}')">
+          <button class="btn btn-play" onclick="playVideo('${rec.filename}', '${rec.cameraName}', '${rec.created}', '${rec.sizeMb}', '${encodeURIComponent(rec.relativePath || '')}')">
             <i data-lucide="play" style="width: 14px; height: 14px; margin-right: 0;"></i> Play
           </button>
         `}
@@ -611,11 +615,13 @@ function renderRecordings(recordings) {
 /**
  * Opens the video modal and plays the specified file.
  */
-function playVideo(filename, cameraName, created, sizeMb) {
+function playVideo(filename, cameraName, created, sizeMb, encodedRelativePath = '') {
   modalVideoTitle.textContent = `${cameraName} - Playback`;
   modalVideoMeta.textContent = `Recorded: ${created} | Size: ${sizeMb} MB | File: ${filename}`;
   
-  playbackVideo.src = `/recordings/${encodeURIComponent(filename)}`;
+  const rawPath = encodedRelativePath ? decodeURIComponent(encodedRelativePath) : filename;
+  const safePath = rawPath.split('/').map(encodeURIComponent).join('/');
+  playbackVideo.src = `/recordings/${safePath}`;
   videoModal.classList.add('active');
   
   playbackVideo.load();
@@ -814,7 +820,8 @@ async function handleGeneralSettingsSubmit(e) {
   
   const payload = {
     max_storage_gb: parseFloat(maxStorageInput.value),
-    chunk_minutes: parseInt(chunkMinutesInput.value)
+    chunk_minutes: parseInt(chunkMinutesInput.value),
+    auto_overwrite: autoOverwriteInput ? autoOverwriteInput.checked : true
   };
 
   try {

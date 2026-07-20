@@ -249,24 +249,46 @@ async function getLogicalDrives() {
 }
 
 /**
+ * Recursively scans a directory for all .mp4 recording files.
+ */
+async function scanRecordingsRecursively(dir) {
+  let results = [];
+  try {
+    const entries = await fs.readdir(dir, { withFileTypes: true });
+    for (const entry of entries) {
+      const fullPath = path.join(dir, entry.name);
+      if (entry.isDirectory()) {
+        const subResults = await scanRecordingsRecursively(fullPath);
+        results = results.concat(subResults);
+      } else if (entry.isFile() && entry.name.endsWith('.mp4')) {
+        const stat = await fs.stat(fullPath);
+        const relativePath = path.relative(dir, fullPath).replace(/\\/g, '/');
+        results.push({
+          fullPath,
+          relativePath,
+          filename: entry.name,
+          size: stat.size,
+          mtime: stat.mtimeMs,
+          mtimeDate: stat.mtime
+        });
+      }
+    }
+  } catch (err) {
+    console.error(`[Web Server] Recursive recording scan error in "${dir}":`, err.message);
+  }
+  return results;
+}
+
+/**
  * Calculates storage statistics for the recordings directory.
  */
 async function getStorageStats(storagePath, limitGb) {
   try {
     await fs.ensureDir(storagePath);
-    const files = await fs.readdir(storagePath);
+    const files = await scanRecordingsRecursively(storagePath);
     
-    let totalSizeBytes = 0;
-    let mp4Count = 0;
-
-    for (const file of files) {
-      const filePath = path.join(storagePath, file);
-      const stat = await fs.stat(filePath);
-      if (stat.isFile() && file.endsWith('.mp4')) {
-        totalSizeBytes += stat.size;
-        mp4Count++;
-      }
-    }
+    let totalSizeBytes = files.reduce((sum, f) => sum + f.size, 0);
+    let mp4Count = files.length;
 
     const limitBytes = limitGb * 1024 * 1024 * 1024;
     const usagePercent = limitBytes > 0 
@@ -301,7 +323,7 @@ async function getStorageStats(storagePath, limitGb) {
 async function getRecordings(storagePath, activeRecorders) {
   try {
     await fs.ensureDir(storagePath);
-    const files = await fs.readdir(storagePath);
+    const files = await scanRecordingsRecursively(storagePath);
     const recordings = [];
 
     // Identify cameras that are actively running their recording process
@@ -309,23 +331,19 @@ async function getRecordings(storagePath, activeRecorders) {
       .filter(r => r.ffmpegProcess && r.camera.enabled !== false)
       .map(r => r.camera.name.toLowerCase());
 
-    for (const file of files) {
-      if (file.endsWith('.mp4')) {
-        const filePath = path.join(storagePath, file);
-        const stat = await fs.stat(filePath);
+    for (const item of files) {
+      const parts = item.filename.split('_');
+      const cameraName = parts.length > 0 ? parts[0] : 'Unknown';
 
-        const parts = file.split('_');
-        const cameraName = parts.length > 0 ? parts[0] : 'Unknown';
-
-        recordings.push({
-          filename: file,
-          cameraName: cameraName,
-          sizeMb: (stat.size / (1024 * 1024)).toFixed(2),
-          mtime: stat.mtimeMs,
-          created: stat.mtime.toLocaleString(),
-          isActive: false
-        });
-      }
+      recordings.push({
+        filename: item.filename,
+        relativePath: item.relativePath,
+        cameraName: cameraName,
+        sizeMb: (item.size / (1024 * 1024)).toFixed(2),
+        mtime: item.mtime,
+        created: item.mtimeDate.toLocaleString(),
+        isActive: false
+      });
     }
 
     // Sort newest first
@@ -725,7 +743,7 @@ export function startWebServer(config, recorders, onStoragePathChange) {
 
   // API Route: Update general settings
   app.post('/api/settings', async (req, res) => {
-    const { max_storage_gb, chunk_minutes } = req.body;
+    const { max_storage_gb, chunk_minutes, auto_overwrite } = req.body;
     if (max_storage_gb === undefined || chunk_minutes === undefined) {
       return res.status(400).json({ error: 'max_storage_gb and chunk_minutes are required' });
     }
@@ -736,13 +754,17 @@ export function startWebServer(config, recorders, onStoragePathChange) {
       
       currentConfig.max_storage_gb = parseFloat(max_storage_gb);
       currentConfig.chunk_minutes = parseInt(chunk_minutes);
+      if (auto_overwrite !== undefined) {
+        currentConfig.auto_overwrite = !!auto_overwrite;
+      }
 
       await fs.writeJson(configPath, currentConfig, { spaces: 2 });
 
       config.max_storage_gb = currentConfig.max_storage_gb;
       config.chunk_minutes = currentConfig.chunk_minutes;
+      config.auto_overwrite = currentConfig.auto_overwrite;
 
-      console.log(`[Web Server] Settings updated. Limit: ${config.max_storage_gb} GB, Chunk: ${config.chunk_minutes} mins`);
+      console.log(`[Web Server] Settings updated. Limit: ${config.max_storage_gb} GB, Chunk: ${config.chunk_minutes} mins, Auto-Overwrite: ${config.auto_overwrite}`);
 
       if (typeof onStoragePathChange === 'function') {
         onStoragePathChange(config.storage_path);
