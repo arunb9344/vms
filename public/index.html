@@ -36,6 +36,9 @@
           <span class="pulse-dot green"></span>
           <span>System Running</span>
         </div>
+        <button type="button" class="btn btn-danger btn-sm" onclick="confirmStopServer()" style="width: 100%; margin-top: 10px; background: rgba(239, 68, 68, 0.15); border: 1px solid rgba(239, 68, 68, 0.3); color: #ef4444; font-size: 12px; padding: 8px; border-radius: 6px; cursor: pointer; display: inline-flex; align-items: center; justify-content: center; gap: 6px; transition: var(--transition);">
+          <i data-lucide="power" style="width: 14px; height: 14px;"></i> Stop Server
+        </button>
       </div>
     </aside>
 
@@ -48,8 +51,11 @@
           <h1 id="view-title">System Overview</h1>
           <p id="current-time">Sunday, July 19, 2026</p>
         </div>
-        <div class="user-profile">
+        <div class="user-profile" style="display: flex; align-items: center; gap: 12px;">
           <span class="user-badge">Administrator</span>
+          <button type="button" class="btn btn-danger btn-sm" onclick="confirmStopServer()" title="Stop VMS Server & Exit" style="background: rgba(239, 68, 68, 0.15); border: 1px solid rgba(239, 68, 68, 0.3); color: #ef4444; font-size: 12px; padding: 6px 12px; border-radius: 6px; cursor: pointer; display: inline-flex; align-items: center; gap: 6px; transition: var(--transition);">
+            <i data-lucide="power" style="width: 14px; height: 14px;"></i> Stop Server & Exit
+          </button>
         </div>
       </header>
 
@@ -311,7 +317,20 @@
               </div>
               <div class="form-group" style="margin-bottom: 16px;">
                 <label for="chunk-minutes-input" style="display: block; font-size: 13px; color: var(--text-muted); margin-bottom: 6px; font-weight: 500;">Video Chunk Duration (Minutes)</label>
-                <input type="number" id="chunk-minutes-input" required min="1" max="120" style="width: 100%; background: rgba(0, 0, 0, 0.2); border: 1px solid rgba(255, 255, 255, 0.08); border-radius: 8px; padding: 10px; color: #fff; font-family: var(--font-family); font-size: 14px; outline: none; transition: var(--transition);">
+                <input type="number" id="chunk-minutes-input" required min="1" max="1440" placeholder="e.g. 60 or 1440 for 1 Day" style="width: 100%; background: rgba(0, 0, 0, 0.2); border: 1px solid rgba(255, 255, 255, 0.08); border-radius: 8px; padding: 10px; color: #fff; font-family: var(--font-family); font-size: 14px; outline: none; transition: var(--transition);">
+                
+                <!-- Quick Preset Duration Shortcuts -->
+                <div style="display: flex; gap: 6px; margin-top: 8px; flex-wrap: wrap;">
+                  <button type="button" class="btn btn-secondary btn-sm" onclick="document.getElementById('chunk-minutes-input').value = 15" style="padding: 3px 8px; font-size: 11px;">15 Min</button>
+                  <button type="button" class="btn btn-secondary btn-sm" onclick="document.getElementById('chunk-minutes-input').value = 30" style="padding: 3px 8px; font-size: 11px;">30 Min</button>
+                  <button type="button" class="btn btn-secondary btn-sm" onclick="document.getElementById('chunk-minutes-input').value = 60" style="padding: 3px 8px; font-size: 11px;">1 Hr</button>
+                  <button type="button" class="btn btn-secondary btn-sm" onclick="document.getElementById('chunk-minutes-input').value = 360" style="padding: 3px 8px; font-size: 11px;">6 Hr</button>
+                  <button type="button" class="btn btn-secondary btn-sm" onclick="document.getElementById('chunk-minutes-input').value = 720" style="padding: 3px 8px; font-size: 11px;">12 Hr</button>
+                  <button type="button" class="btn btn-primary btn-sm" onclick="document.getElementById('chunk-minutes-input').value = 1440" style="padding: 3px 8px; font-size: 11px;">24 Hr (1 Day)</button>
+                </div>
+                <span style="font-size: 11px; color: var(--text-dim); display: block; margin-top: 6px;">
+                  * Set to 1440 minutes for 1 full day (24 hours) continuous recording per file.
+                </span>
               </div>
               <div class="form-group" style="margin-bottom: 20px; display: flex; align-items: center; justify-content: space-between; background: rgba(0, 0, 0, 0.2); border: 1px solid rgba(255, 255, 255, 0.08); border-radius: 8px; padding: 12px;">
                 <div>
@@ -498,6 +517,31 @@
           <span class="pulse-dot green" style="animation: pulse 1.5s infinite;"></span> Fast JPEG Refresh (1.5s interval)
         </span>
         <button class="btn btn-secondary" onclick="closeLivePreviewModal()">Close Live View</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Stop Server Confirmation Modal -->
+  <div class="modal" id="stop-server-modal">
+    <div class="modal-overlay" onclick="closeStopServerModal()"></div>
+    <div class="modal-content glass" style="max-width: 440px;">
+      <div class="modal-header">
+        <h3 style="color: #ef4444; display: flex; align-items: center; gap: 8px;">
+          <i data-lucide="power"></i> Stop VMS Server?
+        </h3>
+        <i data-lucide="x" class="close-btn" onclick="closeStopServerModal()"></i>
+      </div>
+      <div class="modal-body" style="padding: 20px; font-size: 14px; color: var(--text-muted); line-height: 1.5; background: transparent; aspect-ratio: auto; height: auto;">
+        <p style="margin-bottom: 12px;">Are you sure you want to stop the <strong>EyeTech VMS</strong> server?</p>
+        <div style="background: rgba(239, 68, 68, 0.1); border: 1px solid rgba(239, 68, 68, 0.2); border-radius: 8px; padding: 12px; font-size: 13px; color: #fca5a5;">
+          <strong>Warning:</strong> Stopping the server will halt continuous camera recording and stop live streaming across all connected IP cameras.
+        </div>
+      </div>
+      <div class="modal-footer" style="display: flex; justify-content: flex-end; gap: 10px;">
+        <button class="btn btn-secondary" onclick="closeStopServerModal()">Cancel</button>
+        <button class="btn btn-danger" id="execute-stop-server-btn" onclick="executeStopServer()" style="background: #ef4444; color: #fff; border: none; padding: 8px 16px; border-radius: 6px; font-weight: 500; cursor: pointer; display: flex; align-items: center; gap: 6px;">
+          <i data-lucide="power" style="width: 14px; height: 14px;"></i> Stop Server Now
+        </button>
       </div>
     </div>
   </div>

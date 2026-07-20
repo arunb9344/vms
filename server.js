@@ -241,27 +241,38 @@ function checkCameraOnline(ip, port) {
 }
 
 /**
- * Detects available logical drives on Windows using PowerShell.
+ * Detects available logical drives on Windows using PowerShell, including External Hard Disks and USB drives.
  */
 async function getLogicalDrives() {
   try {
     const { stdout } = await execPromise(
-      'powershell -Command "Get-CimInstance Win32_LogicalDisk | Select-Object DeviceID, VolumeName, Size, FreeSpace | ConvertTo-Json"'
+      'powershell -Command "Get-CimInstance Win32_LogicalDisk | Select-Object DeviceID, DriveType, VolumeName, Size, FreeSpace | ConvertTo-Json"'
     );
     if (!stdout.trim()) return [];
     
     const parsed = JSON.parse(stdout.trim());
     const drives = Array.isArray(parsed) ? parsed : [parsed];
     
-    return drives.map((d) => ({
-      driveLetter: d.DeviceID,
-      volumeName: d.VolumeName || 'Local Disk',
-      sizeGb: (d.Size / (1024 * 1024 * 1024)).toFixed(1),
-      freeGb: (d.FreeSpace / (1024 * 1024 * 1024)).toFixed(1),
-      usedGb: ((d.Size - d.FreeSpace) / (1024 * 1024 * 1024)).toFixed(1),
-      rawSize: d.Size,
-      rawFree: d.FreeSpace
-    }));
+    return drives.filter(d => d.Size && d.Size > 0).map((d) => {
+      let typeLabel = 'Local Disk';
+      if (d.DriveType === 2) typeLabel = 'External USB / Removable';
+      else if (d.DriveType === 3) typeLabel = 'Hard Disk Drive / SSD';
+      else if (d.DriveType === 4) typeLabel = 'Network Drive (NAS)';
+
+      const name = d.VolumeName ? `${d.VolumeName} (${d.DeviceID})` : `${typeLabel} (${d.DeviceID})`;
+
+      return {
+        driveLetter: d.DeviceID,
+        driveType: d.DriveType,
+        driveTypeLabel: typeLabel,
+        volumeName: name,
+        sizeGb: (d.Size / (1024 * 1024 * 1024)).toFixed(1),
+        freeGb: (d.FreeSpace / (1024 * 1024 * 1024)).toFixed(1),
+        usedGb: ((d.Size - d.FreeSpace) / (1024 * 1024 * 1024)).toFixed(1),
+        rawSize: d.Size,
+        rawFree: d.FreeSpace
+      };
+    });
   } catch (error) {
     console.error('[Web Server] Error scanning logical drives:', error.message);
     return [];
@@ -484,6 +495,20 @@ export function startWebServer(config, recorders, onStoragePathChange) {
 
   app.use('/recordings', (req, res, next) => {
     express.static(config.storage_path)(req, res, next);
+  });
+
+  // API Route: Stop VMS server process safely from Web UI
+  app.post('/api/server/stop', (req, res) => {
+    console.log('[Web Server] Stop Server command received from Web UI. Shutting down VMS...');
+    res.json({ success: true, message: 'VMS server is shutting down cleanly...' });
+
+    setTimeout(() => {
+      recorders.forEach(r => {
+        try { r.stop(); } catch (e) {}
+      });
+      console.log('[Web Server] VMS Server process terminated by Administrator via Web UI.');
+      process.exit(0);
+    }, 800);
   });
 
   // --- Licensing API Endpoints ---

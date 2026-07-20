@@ -1134,3 +1134,54 @@ window.closeLivePreviewModal = function() {
   // Setting source to empty string closes the TCP socket and kills the backend FFmpeg process instantly
   livePreviewImg.src = ''; 
 };
+
+/**
+ * Opens the Stop Server Confirmation Modal.
+ */
+window.confirmStopServer = function() {
+  const modal = document.getElementById('stop-server-modal');
+  if (modal) modal.classList.add('active');
+};
+
+/**
+ * Closes the Stop Server Confirmation Modal.
+ */
+window.closeStopServerModal = function() {
+  const modal = document.getElementById('stop-server-modal');
+  if (modal) modal.classList.remove('active');
+};
+
+/**
+ * Executes the server shutdown request and displays shutdown feedback UI.
+ */
+window.executeStopServer = async function() {
+  const btn = document.getElementById('execute-stop-server-btn');
+  if (btn) btn.disabled = true;
+  
+  try {
+    const res = await fetch('/api/server/stop', { method: 'POST' });
+    const data = await res.json();
+    if (data.success) {
+      closeStopServerModal();
+      document.body.innerHTML = `
+        <div style="height: 100vh; display: flex; flex-direction: column; align-items: center; justify-content: center; background: #0b0f19; color: #fff; font-family: Outfit, sans-serif; text-align: center; padding: 20px;">
+          <i data-lucide="power-off" style="width: 64px; height: 64px; color: #ef4444; margin-bottom: 16px;"></i>
+          <h2 style="font-size: 28px; margin-bottom: 8px;">VMS Server Stopped</h2>
+          <p style="color: #94a3b8; font-size: 15px; max-width: 480px; line-height: 1.6;">The background recording server has been safely shut down. Camera recording and live streaming are now paused.</p>
+          <button onclick="window.close()" style="margin-top: 24px; background: rgba(255,255,255,0.1); border: 1px solid rgba(255,255,255,0.2); color: #fff; padding: 10px 24px; border-radius: 8px; font-size: 14px; cursor: pointer;">Close Tab</button>
+        </div>
+      `;
+      lucide.createIcons();
+      setTimeout(() => window.close(), 1500);
+    }
+  } catch (err) {
+    document.body.innerHTML = `
+      <div style="height: 100vh; display: flex; flex-direction: column; align-items: center; justify-content: center; background: #0b0f19; color: #fff; font-family: Outfit, sans-serif; text-align: center; padding: 20px;">
+        <i data-lucide="power-off" style="width: 64px; height: 64px; color: #ef4444; margin-bottom: 16px;"></i>
+        <h2 style="font-size: 28px; margin-bottom: 8px;">VMS Server Stopped</h2>
+        <p style="color: #94a3b8; font-size: 15px; max-width: 480px; line-height: 1.6;">The background recording server has been safely shut down.</p>
+      </div>
+    `;
+    lucide.createIcons();
+  }
+};
