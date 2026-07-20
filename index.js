@@ -37,6 +37,26 @@ function isLicenseValid() {
   }
 }
 
+function getConfigFilePath() {
+  const appDataDir = process.env.APPDATA 
+    ? path.join(process.env.APPDATA, 'EyeTechVMS')
+    : path.join(__dirname);
+  fs.ensureDirSync(appDataDir);
+  const userConfigPath = path.join(appDataDir, 'config.json');
+  
+  if (!fs.existsSync(userConfigPath)) {
+    const defaultConfigPath = path.join(__dirname, 'config.json');
+    if (fs.existsSync(defaultConfigPath)) {
+      try {
+        fs.copySync(defaultConfigPath, userConfigPath);
+      } catch (err) {
+        console.error('[Config] Failed to copy default config.json to AppData:', err.message);
+      }
+    }
+  }
+  return userConfigPath;
+}
+
 async function main() {
   console.log('====================================================');
   console.log('  Lightweight Video Management System (VMS) Startup ');
@@ -44,9 +64,9 @@ async function main() {
 
   let config;
   try {
-    // Read the config file
-    config = await fs.readJson('./config.json');
-    console.log('[System] Configuration successfully loaded.');
+    const configPath = getConfigFilePath();
+    config = await fs.readJson(configPath);
+    console.log(`[System] Configuration successfully loaded from "${configPath}".`);
   } catch (error) {
     console.error(`[System] [Error] Failed to load config.json: ${error.message}`);
     process.exit(1);

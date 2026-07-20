@@ -43,6 +43,26 @@ function generateActivationKey(hardwareId) {
   return `ET-VMS-${hmac.substring(0, 4)}-${hmac.substring(4, 8)}-${hmac.substring(8, 12)}-${hmac.substring(12, 16)}`;
 }
 
+function getConfigFilePath() {
+  const appDataDir = process.env.APPDATA 
+    ? path.join(process.env.APPDATA, 'EyeTechVMS')
+    : path.join(__dirname);
+  fs.ensureDirSync(appDataDir);
+  const userConfigPath = path.join(appDataDir, 'config.json');
+  
+  if (!fs.existsSync(userConfigPath)) {
+    const defaultConfigPath = path.join(__dirname, 'config.json');
+    if (fs.existsSync(defaultConfigPath)) {
+      try {
+        fs.copySync(defaultConfigPath, userConfigPath);
+      } catch (err) {
+        console.error('[Config] Failed to copy default config.json to AppData:', err.message);
+      }
+    }
+  }
+  return userConfigPath;
+}
+
 function checkLicense() {
   const licensePath = process.env.APPDATA 
     ? path.join(process.env.APPDATA, 'EyeTechVMS', 'license.json')
@@ -733,7 +753,7 @@ export function startWebServer(config, recorders, onStoragePathChange) {
   // API Route: Get entire configuration
   app.get('/api/settings', async (req, res) => {
     try {
-      const configData = await fs.readJson('./config.json');
+      const configData = await fs.readJson(getConfigFilePath());
       res.json(configData);
     } catch (err) {
       console.error('[Web Server] Failed to read configuration:', err.message);
@@ -749,7 +769,7 @@ export function startWebServer(config, recorders, onStoragePathChange) {
     }
 
     try {
-      const configPath = './config.json';
+      const configPath = getConfigFilePath();
       const currentConfig = await fs.readJson(configPath);
       
       currentConfig.max_storage_gb = parseFloat(max_storage_gb);
@@ -788,7 +808,7 @@ export function startWebServer(config, recorders, onStoragePathChange) {
       const absolutePath = path.resolve(newPath);
       await fs.ensureDir(absolutePath);
 
-      const configPath = './config.json';
+      const configPath = getConfigFilePath();
       const currentConfig = await fs.readJson(configPath);
       currentConfig.storage_path = absolutePath;
       await fs.writeJson(configPath, currentConfig, { spaces: 2 });
@@ -815,7 +835,7 @@ export function startWebServer(config, recorders, onStoragePathChange) {
     }
 
     try {
-      const configPath = './config.json';
+      const configPath = getConfigFilePath();
       const currentConfig = await fs.readJson(configPath);
       if (!currentConfig.cameras) currentConfig.cameras = [];
 
@@ -862,7 +882,7 @@ export function startWebServer(config, recorders, onStoragePathChange) {
     }
 
     try {
-      const configPath = './config.json';
+      const configPath = getConfigFilePath();
       const currentConfig = await fs.readJson(configPath);
       if (!currentConfig.cameras) currentConfig.cameras = [];
 
@@ -897,7 +917,7 @@ export function startWebServer(config, recorders, onStoragePathChange) {
     }
 
     try {
-      const configPath = './config.json';
+      const configPath = getConfigFilePath();
       const currentConfig = await fs.readJson(configPath);
       if (!currentConfig.cameras) currentConfig.cameras = [];
 
@@ -934,7 +954,7 @@ export function startWebServer(config, recorders, onStoragePathChange) {
     }
 
     try {
-      const configPath = './config.json';
+      const configPath = getConfigFilePath();
       const currentConfig = await fs.readJson(configPath);
       if (!currentConfig.cameras) currentConfig.cameras = [];
 
@@ -965,7 +985,7 @@ export function startWebServer(config, recorders, onStoragePathChange) {
   app.delete('/api/settings/cameras/:name', async (req, res) => {
     const name = req.params.name;
     try {
-      const configPath = './config.json';
+      const configPath = getConfigFilePath();
       const currentConfig = await fs.readJson(configPath);
       if (!currentConfig.cameras) currentConfig.cameras = [];
 
