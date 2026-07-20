@@ -46,12 +46,12 @@ function generateActivationKey(hardwareId) {
 function getConfigFilePath() {
   const appDataDir = process.env.APPDATA 
     ? path.join(process.env.APPDATA, 'EyeTechVMS')
-    : path.join(__dirname);
+    : path.resolve('.');
   fs.ensureDirSync(appDataDir);
   const userConfigPath = path.join(appDataDir, 'config.json');
   
   if (!fs.existsSync(userConfigPath)) {
-    const defaultConfigPath = path.join(__dirname, 'config.json');
+    const defaultConfigPath = path.resolve('./config.json');
     if (fs.existsSync(defaultConfigPath)) {
       try {
         fs.copySync(defaultConfigPath, userConfigPath);
