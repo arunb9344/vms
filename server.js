@@ -712,7 +712,7 @@ export function startWebServer(config, recorders, onStoragePathChange) {
     }
   });
 
-  // API Route: Real-time 30-50 FPS MJPEG Stream
+  // API Route: Real-time 30-50 FPS MJPEG Stream (Supports Mainstream & Substream)
   app.get('/api/cameras/:name/stream', async (req, res) => {
     const name = req.params.name;
     const recorder = recorders.find(r => r.camera.name.toLowerCase() === name.toLowerCase());
@@ -723,25 +723,33 @@ export function startWebServer(config, recorders, onStoragePathChange) {
 
     try {
       const uris = await getCameraUris(recorder.camera);
-      if (!uris || !uris.rtspUri) {
+      if (!uris || (!uris.rtspUri && !uris.substreamRtspUri)) {
         throw new Error(`No RTSP stream URI found for camera "${name}".`);
       }
 
-      console.log(`[Web Server] Starting real-time 30-50 FPS MJPEG stream for "${name}"...`);
+      // Determine stream quality type (Mainstream vs Substream)
+      const requestedStream = req.query.stream || recorder.camera.streamType || 'sub';
+      let targetRtspUri = uris.rtspUri;
+
+      if (requestedStream === 'sub' && uris.substreamRtspUri) {
+        targetRtspUri = uris.substreamRtspUri;
+      }
+
+      console.log(`[Web Server] Starting real-time MJPEG stream (${requestedStream.toUpperCase()}) for "${name}"...`);
 
       // Set boundary-based MJPEG stream headers
       res.setHeader('Content-Type', 'multipart/x-mixed-replace; boundary=ffmpeg');
       res.setHeader('Connection', 'close');
       res.setHeader('Cache-Control', 'no-store, no-cache, must-revalidate, private');
 
-      // Spawn FFmpeg to decode RTSP and re-encode to MJPEG stream on stdout
+      // Spawn FFmpeg to decode target RTSP stream (Main or Sub) and re-encode to MJPEG stream on stdout
       const args = [
         '-rtsp_transport', 'tcp',
         '-timeout', '5000000',
-        '-i', uris.rtspUri,
+        '-i', targetRtspUri,
         '-an',
         '-f', 'mpjpeg',
-        '-q:v', '5', // Quality factor (1-31, lower is better. 5 is very high quality, low bandwidth)
+        '-q:v', '5', // Quality factor
         'pipe:1'
       ];
 
@@ -759,6 +767,35 @@ export function startWebServer(config, recorders, onStoragePathChange) {
       });
     } catch (err) {
       console.error(`[Web Server] Failed to initiate stream for camera "${name}":`, err.message);
+      res.status(500).json({ error: err.message });
+    }
+  });
+
+  // API Route: Update individual camera stream type preference (Mainstream vs Substream)
+  app.post('/api/cameras/:name/stream-type', async (req, res) => {
+    const name = req.params.name;
+    const { streamType } = req.body; // 'main' or 'sub'
+
+    if (!streamType || !['main', 'sub'].includes(streamType)) {
+      return res.status(400).json({ error: 'streamType must be either "main" or "sub"' });
+    }
+
+    try {
+      const configPath = getConfigFilePath();
+      const currentConfig = await fs.readJson(configPath);
+
+      const targetCam = currentConfig.cameras.find(c => c.name.toLowerCase() === name.toLowerCase());
+      if (!targetCam) {
+        return res.status(404).json({ error: `Camera "${name}" not found.` });
+      }
+
+      targetCam.streamType = streamType;
+      await fs.writeJson(configPath, currentConfig, { spaces: 2 });
+
+      config.cameras = currentConfig.cameras;
+      res.json({ success: true, camera: targetCam });
+    } catch (err) {
+      console.error('[Web Server] Failed to save camera stream type preference:', err.message);
       res.status(500).json({ error: err.message });
     }
   });

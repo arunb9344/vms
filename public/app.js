@@ -483,8 +483,9 @@ function renderCameras(cameras) {
       }
     };
 
+    const activeStreamType = cam.streamType || 'sub';
     const streamUrl = isOnline 
-      ? `/api/cameras/${encodeURIComponent(cam.name)}/stream`
+      ? `/api/cameras/${encodeURIComponent(cam.name)}/stream?stream=${activeStreamType}`
       : `/api/cameras/${encodeURIComponent(cam.name)}/snapshot`;
 
     card.innerHTML = `
@@ -496,6 +497,9 @@ function renderCameras(cameras) {
           <span style="font-size: 11px; opacity: 0.8; font-weight: normal;">(${cam.ip})</span>
         </div>
         <div style="display: flex; align-items: center; gap: 6px;">
+          <button type="button" class="tile-btn stream-toggle-btn ${activeStreamType === 'main' ? 'btn-main' : 'btn-sub'}" onclick="toggleCameraStreamType('${cam.name}')" title="Click to toggle stream quality (Mainstream for HD vs Substream for Low CPU)" style="font-size: 10px; font-weight: 700; padding: 2px 7px; border-radius: 4px; background: ${activeStreamType === 'main' ? 'rgba(16, 185, 129, 0.25)' : 'rgba(59, 130, 246, 0.25)'}; color: ${activeStreamType === 'main' ? '#10b981' : '#60a5fa'}; border: 1px solid ${activeStreamType === 'main' ? 'rgba(16, 185, 129, 0.4)' : 'rgba(59, 130, 246, 0.4)'};">
+            ${activeStreamType === 'main' ? 'MAIN (HD)' : 'SUB (SD)'}
+          </button>
           <button type="button" class="tile-btn" onclick="grabTileSnapshot('${cam.name}')" title="Grab JPEG Snapshot">
             <i data-lucide="camera" style="width: 14px; height: 14px;"></i>
           </button>
@@ -1184,4 +1188,73 @@ window.executeStopServer = async function() {
     `;
     lucide.createIcons();
   }
+};
+
+/**
+ * Toggles a single camera between Mainstream (HD) and Substream (SD).
+ */
+window.toggleCameraStreamType = async function(name) {
+  const cam = globalCameras.find(c => c.name.toLowerCase() === name.toLowerCase());
+  if (!cam) return;
+
+  const newStreamType = (cam.streamType === 'main') ? 'sub' : 'main';
+  cam.streamType = newStreamType;
+
+  try {
+    await fetch(`/api/cameras/${encodeURIComponent(name)}/stream-type`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ streamType: newStreamType })
+    });
+  } catch (e) {
+    console.error('Failed to save camera stream type:', e.message);
+  }
+
+  // Update card image source to reload with new stream type
+  const card = Array.from(document.querySelectorAll('.camera-card')).find(c => {
+    const titleEl = c.querySelector('.tile-title-badge span:nth-child(2)');
+    return titleEl && titleEl.textContent === name;
+  });
+
+  if (card) {
+    const img = card.querySelector('.camera-feed-img');
+    if (img) {
+      img.src = `/api/cameras/${encodeURIComponent(name)}/stream?stream=${newStreamType}&t=${Date.now()}`;
+    }
+    const badge = card.querySelector('.stream-toggle-btn');
+    if (badge) {
+      badge.textContent = newStreamType === 'main' ? 'MAIN (HD)' : 'SUB (SD)';
+      badge.style.background = newStreamType === 'main' ? 'rgba(16, 185, 129, 0.25)' : 'rgba(59, 130, 246, 0.25)';
+      badge.style.color = newStreamType === 'main' ? '#10b981' : '#60a5fa';
+      badge.style.borderColor = newStreamType === 'main' ? 'rgba(16, 185, 129, 0.4)' : 'rgba(59, 130, 246, 0.4)';
+    }
+  }
+};
+
+/**
+ * Toggles ALL cameras simultaneously between Mainstream and Substream.
+ */
+window.toggleAllCamerasStreamType = async function() {
+  if (!globalCameras || globalCameras.length === 0) return;
+
+  const anySub = globalCameras.some(c => (c.streamType || 'sub') === 'sub');
+  const targetType = anySub ? 'main' : 'sub';
+
+  for (const cam of globalCameras) {
+    cam.streamType = targetType;
+    try {
+      await fetch(`/api/cameras/${encodeURIComponent(cam.name)}/stream-type`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ streamType: targetType })
+      });
+    } catch (e) {}
+  }
+
+  const masterBtn = document.getElementById('master-stream-btn');
+  if (masterBtn) {
+    masterBtn.innerHTML = `<i data-lucide="layers" style="width: 14px; height: 14px;"></i> All: ${targetType === 'main' ? 'MAIN (HD)' : 'SUB (SD)'}`;
+  }
+
+  renderCameras(globalCameras);
 };

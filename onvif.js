@@ -75,12 +75,12 @@ export async function getCameraUris(camera) {
     
     if (!profileToken) {
       console.warn(`[ONVIF] [Warning] Camera "${name}" (${ip}) profile token is empty.`);
-      return { rtspUri: null, snapshotUri: null };
+      return { rtspUri: null, substreamRtspUri: null, snapshotUri: null };
     }
 
-    console.log(`[ONVIF] Camera "${name}" using profile token: ${profileToken}`);
+    console.log(`[ONVIF] Camera "${name}" Mainstream profile token: ${profileToken}`);
 
-    // 1. Fetch RTSP stream URI
+    // 1. Fetch Mainstream RTSP URI
     let rtspUri = null;
     try {
       const streamUriResult = await device.media.getStreamUri({
@@ -91,10 +91,46 @@ export async function getCameraUris(camera) {
         rtspUri = injectCredentials(streamUriResult.uri, username, password);
       }
     } catch (rtspErr) {
-      console.warn(`[ONVIF] Camera "${name}" failed to return RTSP Stream URI:`, rtspErr.message);
+      console.warn(`[ONVIF] Camera "${name}" failed to return Mainstream RTSP URI:`, rtspErr.message);
     }
 
-    // 2. Fetch HTTP snapshot URI
+    // 2. Fetch Substream RTSP URI (Profile 2 or pattern fallback)
+    let substreamRtspUri = null;
+    let subProfile = profiles.length > 1 ? profiles[1] : null;
+    if (subProfile) {
+      let subToken = subProfile.token || (subProfile.$ && subProfile.$.token);
+      if (subToken) {
+        try {
+          const subResult = await device.media.getStreamUri({
+            protocol: 'RTSP',
+            profileToken: subToken
+          });
+          if (subResult && subResult.uri) {
+            substreamRtspUri = injectCredentials(subResult.uri, username, password);
+            console.log(`[ONVIF] Camera "${name}" Substream profile token: ${subToken}`);
+          }
+        } catch (subErr) {
+          console.warn(`[ONVIF] Camera "${name}" sub-profile query notice:`, subErr.message);
+        }
+      }
+    }
+
+    // Pattern fallback for Substream if camera uses standard Hikvision / Dahua / CP PLUS URL formats
+    if (!substreamRtspUri && rtspUri) {
+      if (rtspUri.includes('subtype=0')) {
+        substreamRtspUri = rtspUri.replace('subtype=0', 'subtype=1');
+      } else if (rtspUri.includes('/101')) {
+        substreamRtspUri = rtspUri.replace('/101', '/102');
+      } else if (rtspUri.includes('/main')) {
+        substreamRtspUri = rtspUri.replace('/main', '/sub');
+      } else if (rtspUri.includes('stream=0')) {
+        substreamRtspUri = rtspUri.replace('stream=0', 'stream=1');
+      } else {
+        substreamRtspUri = rtspUri;
+      }
+    }
+
+    // 3. Fetch HTTP snapshot URI
     let snapshotUri = null;
     try {
       const snapshotResult = await device.media.getSnapshotUri({ profileToken });
@@ -105,13 +141,13 @@ export async function getCameraUris(camera) {
       console.warn(`[ONVIF] Camera "${name}" does not support HTTP snapshot query natively:`, snapErr.message);
     }
 
-    const uris = { rtspUri, snapshotUri };
+    const uris = { rtspUri, substreamRtspUri, snapshotUri };
     cameraCache.set(cacheKey, uris);
-    console.log(`[ONVIF] Resolved URIs cached for camera "${name}" (${ip}). RTSP: ${!!rtspUri}, Snap: ${!!snapshotUri}`);
+    console.log(`[ONVIF] Resolved URIs cached for camera "${name}" (${ip}). Main RTSP: ${!!rtspUri}, Sub RTSP: ${!!substreamRtspUri}, Snap: ${!!snapshotUri}`);
     return uris;
   } catch (error) {
     console.error(`[ONVIF] [Error] Failed to connect or query URIs for "${name}" (${ip}):`, error.message);
-    return { rtspUri: null, snapshotUri: null };
+    return { rtspUri: null, substreamRtspUri: null, snapshotUri: null };
   }
 }
 
