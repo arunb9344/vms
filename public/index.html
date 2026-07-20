@@ -95,10 +95,10 @@
         <!-- Middle Content Section (Split Screen) -->
         <div class="middle-section">
           
-          <!-- Cameras Grid Card -->
-          <section id="cameras-section" class="panel-card glass">
+          <!-- Cameras Grid Card & Matrix Video Wall -->
+          <section id="cameras-section" class="panel-card glass live-view-matrix-section">
             <div class="panel-header">
-              <h2><i data-lucide="monitor-play"></i> Camera Feeds & Connection Health</h2>
+              <h2><i data-lucide="monitor-play"></i> Live View Matrix & Video Wall</h2>
               <div style="display: flex; align-items: center; gap: 10px;">
                 <span style="font-size: 12px; color: var(--text-dim); font-weight: 500;">Master Rec:</span>
                 <label class="switch" title="Toggle Recording for ALL Cameras at Once">
@@ -108,7 +108,39 @@
                 <span class="live-tag">LIVE STATE</span>
               </div>
             </div>
-            <div class="camera-list" id="camera-list-container">
+
+            <!-- Live View Matrix Control Toolbar -->
+            <div class="live-view-toolbar">
+              <div style="display: flex; align-items: center; gap: 8px;">
+                <span style="font-size: 12px; color: var(--text-muted); font-weight: 600;">Grid Matrix:</span>
+                <div class="grid-btn-group">
+                  <button type="button" class="grid-btn" data-grid="1x1" onclick="setGridLayout('1x1')" title="Single Camera Focus (1x1)">1x1</button>
+                  <button type="button" class="grid-btn active" data-grid="2x2" onclick="setGridLayout('2x2')" title="4-Camera Grid (2x2)">2x2</button>
+                  <button type="button" class="grid-btn" data-grid="3x3" onclick="setGridLayout('3x3')" title="9-Camera Matrix (3x3)">3x3</button>
+                  <button type="button" class="grid-btn" data-grid="4x4" onclick="setGridLayout('4x4')" title="16-Camera Matrix (4x4)">4x4</button>
+                  <button type="button" class="grid-btn" data-grid="1plus5" onclick="setGridLayout('1plus5')" title="Main Spotlight + 5 Sidebar (1+5)">1+5</button>
+                </div>
+              </div>
+
+              <div style="display: flex; align-items: center; gap: 8px;">
+                <!-- Aspect Ratio Fit/Cover Toggle -->
+                <button type="button" class="btn btn-secondary btn-sm" id="toggle-aspect-btn" onclick="toggleAspectFit()" title="Toggle Video Aspect Ratio (Fit vs Fill)">
+                  <i data-lucide="scaling" style="width: 14px; height: 14px;"></i> Fit: Contain
+                </button>
+
+                <!-- Auto-Tour Sequence Switch -->
+                <button type="button" class="btn btn-secondary btn-sm" id="toggle-tour-btn" onclick="toggleAutoTour()" title="Auto-Cycle Cameras Every 10 Seconds">
+                  <i data-lucide="rotate-cw" style="width: 14px; height: 14px;"></i> Tour: OFF
+                </button>
+
+                <!-- Fullscreen Matrix Video Wall -->
+                <button type="button" class="btn btn-primary btn-sm" onclick="toggleMatrixFullscreen()" title="Fullscreen Video Wall Monitor">
+                  <i data-lucide="maximize" style="width: 14px; height: 14px;"></i> Fullscreen Wall
+                </button>
+              </div>
+            </div>
+
+            <div class="camera-list grid-2x2" id="camera-list-container">
               <div class="loading-spinner-container">
                 <div class="spinner"></div>
                 <p>Establishing ONVIF sockets...</p>

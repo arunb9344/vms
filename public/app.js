@@ -315,90 +315,195 @@ function updateStatusUI(data) {
   }
 }
 
+// State variables for Live View Matrix
+let currentGridMode = '2x2';
+let isAspectCover = false;
+let autoTourInterval = null;
+
+window.setGridLayout = function(mode) {
+  currentGridMode = mode;
+  cameraListContainer.className = `camera-list grid-${mode}`;
+  document.querySelectorAll('.grid-btn').forEach(btn => {
+    btn.classList.toggle('active', btn.dataset.grid === mode);
+  });
+};
+
+window.toggleAspectFit = function() {
+  isAspectCover = !isAspectCover;
+  const aspectBtn = document.getElementById('toggle-aspect-btn');
+  document.querySelectorAll('.camera-card').forEach(card => {
+    card.classList.toggle('fit-cover', isAspectCover);
+  });
+  if (aspectBtn) {
+    aspectBtn.innerHTML = isAspectCover 
+      ? `<i data-lucide="scaling" style="width: 14px; height: 14px;"></i> Fill: Cover`
+      : `<i data-lucide="scaling" style="width: 14px; height: 14px;"></i> Fit: Contain`;
+  }
+  lucide.createIcons();
+};
+
+window.toggleMatrixFullscreen = function() {
+  const matrixSection = document.getElementById('cameras-section');
+  if (!document.fullscreenElement) {
+    if (matrixSection.requestFullscreen) {
+      matrixSection.requestFullscreen();
+    } else if (matrixSection.webkitRequestFullscreen) {
+      matrixSection.webkitRequestFullscreen();
+    }
+  } else {
+    if (document.exitFullscreen) {
+      document.exitFullscreen();
+    }
+  }
+};
+
+window.toggleTileFullscreen = function(tileId) {
+  const tile = document.getElementById(tileId);
+  if (!tile) return;
+  if (!document.fullscreenElement) {
+    if (tile.requestFullscreen) {
+      tile.requestFullscreen();
+    } else if (tile.webkitRequestFullscreen) {
+      tile.webkitRequestFullscreen();
+    }
+  } else {
+    if (document.exitFullscreen) {
+      document.exitFullscreen();
+    }
+  }
+};
+
+window.grabTileSnapshot = function(camName) {
+  const url = `/api/cameras/${encodeURIComponent(camName)}/snapshot`;
+  const link = document.createElement('a');
+  link.href = url;
+  link.download = `${camName}_Snapshot_${Date.now()}.jpg`;
+  document.body.appendChild(link);
+  link.click();
+  document.body.removeChild(link);
+};
+
+window.toggleAutoTour = function() {
+  const tourBtn = document.getElementById('toggle-tour-btn');
+  if (autoTourInterval) {
+    clearInterval(autoTourInterval);
+    autoTourInterval = null;
+    if (tourBtn) {
+      tourBtn.innerHTML = `<i data-lucide="rotate-cw" style="width: 14px; height: 14px;"></i> Tour: OFF`;
+      tourBtn.classList.remove('btn-primary');
+      tourBtn.classList.add('btn-secondary');
+    }
+  } else {
+    const modes = ['1x1', '2x2', '3x3', '1plus5'];
+    let idx = 0;
+    autoTourInterval = setInterval(() => {
+      idx = (idx + 1) % modes.length;
+      setGridLayout(modes[idx]);
+    }, 10000); // Cycle every 10 seconds
+    if (tourBtn) {
+      tourBtn.innerHTML = `<i data-lucide="rotate-cw" style="width: 14px; height: 14px;"></i> Tour: ON (10s)`;
+      tourBtn.classList.remove('btn-secondary');
+      tourBtn.classList.add('btn-primary');
+    }
+  }
+  lucide.createIcons();
+};
+
 /**
- * Renders the health list of cameras on the dashboard.
+ * Renders the health list and live matrix grid of cameras on the dashboard.
  */
 function renderCameras(cameras) {
   if (!cameras || cameras.length === 0) {
-    cameraListContainer.innerHTML = `<p style="color: var(--text-dim); text-align: center; padding: 20px 0;">No cameras configured. Go to "Cameras & Settings" to add cameras.</p>`;
+    cameraListContainer.innerHTML = `<p style="color: var(--text-dim); text-align: center; padding: 40px 0;">No cameras configured. Click "Add Camera" to configure IP cameras.</p>`;
     return;
   }
 
+  // Preserve active grid layout class
+  cameraListContainer.className = `camera-list grid-${currentGridMode}`;
   cameraListContainer.innerHTML = '';
   
-  cameras.forEach(cam => {
-    let badgeClass = 'badge-retrying';
-    let dotColor = 'red';
-    let avatarClass = '';
-    let avatarIcon = 'video-off';
-    
+  cameras.forEach((cam, index) => {
+    const isEnabled = cam.enabled !== false;
+    const isOnline = cam.status === 'recording' || cam.status === 'online';
+    const tileId = `cam-tile-${index}`;
+
+    let statusDot = 'red';
+    let statusLabel = cam.status;
     if (cam.status === 'recording') {
-      badgeClass = 'badge-recording';
-      dotColor = 'green';
-      avatarClass = 'recording';
-      avatarIcon = 'video';
+      statusDot = 'green';
+      statusLabel = '30-50 FPS Live';
     } else if (cam.status === 'online') {
-      badgeClass = 'badge-online';
-      dotColor = 'green-static';
-      avatarClass = '';
-      avatarIcon = 'video';
-    } else if (cam.status === 'offline') {
-      badgeClass = 'badge-offline';
-      dotColor = 'grey';
-      avatarClass = 'disabled';
-      avatarIcon = 'video-off';
-    } else if (cam.status === 'retrying') {
-      badgeClass = 'badge-retrying';
-      dotColor = 'red';
-      avatarClass = '';
-      avatarIcon = 'video-off';
+      statusDot = 'green-static';
+      statusLabel = 'Online';
     }
 
-    const item = document.createElement('div');
-    item.className = 'camera-item';
-    
-    const isEnabled = cam.enabled !== false;
-    const canPreview = cam.status === 'recording' || cam.status === 'online';
+    const card = document.createElement('div');
+    card.className = `camera-card ${isAspectCover ? 'fit-cover' : ''}`;
+    card.id = tileId;
 
-    item.innerHTML = `
-      <div class="camera-info">
-        <div class="camera-avatar ${avatarClass}">
-          <i data-lucide="${avatarIcon}"></i>
+    // Double-click tile to toggle between 1x1 focus mode and current grid mode
+    card.ondblclick = () => {
+      if (currentGridMode === '1x1') {
+        setGridLayout('2x2');
+      } else {
+        setGridLayout('1x1');
+      }
+    };
+
+    const streamUrl = isOnline 
+      ? `/api/cameras/${encodeURIComponent(cam.name)}/stream`
+      : `/api/cameras/${encodeURIComponent(cam.name)}/snapshot`;
+
+    card.innerHTML = `
+      <!-- Top Bar Overlay -->
+      <div class="tile-overlay-top">
+        <div class="tile-title-badge">
+          <span class="pulse-dot ${statusDot}"></span>
+          <span>${cam.name}</span>
+          <span style="font-size: 11px; opacity: 0.8; font-weight: normal;">(${cam.ip})</span>
         </div>
-        <div class="camera-details">
-          <h4>${cam.name}</h4>
-          <p>${cam.ip}:${cam.port}</p>
+        <div style="display: flex; align-items: center; gap: 6px;">
+          <button type="button" class="tile-btn" onclick="grabTileSnapshot('${cam.name}')" title="Grab JPEG Snapshot">
+            <i data-lucide="camera" style="width: 14px; height: 14px;"></i>
+          </button>
+          <button type="button" class="tile-btn" onclick="toggleTileFullscreen('${tileId}')" title="Single Tile Fullscreen">
+            <i data-lucide="maximize-2" style="width: 14px; height: 14px;"></i>
+          </button>
         </div>
       </div>
-      <div style="display: flex; align-items: center; gap: 14px; margin-left: auto;">
-        <!-- Quick Quality Profile Dropdown Switcher -->
-        <select class="dashboard-compression-select" onchange="changeCameraCompression('${cam.name}', this.value)" style="background: rgba(0, 0, 0, 0.4); border: 1px solid rgba(255,255,255,0.08); border-radius: 6px; padding: 5px 8px; color: #fff; font-size: 12px; outline: none; cursor: pointer; transition: var(--transition);">
-          <option value="copy" ${cam.compression === 'copy' ? 'selected' : ''}>Original Copy</option>
-          <option value="high" ${cam.compression === 'high' ? 'selected' : ''}>H.264 High</option>
-          <option value="medium" ${cam.compression === 'medium' ? 'selected' : ''}>H.264 Medium</option>
-          <option value="low" ${cam.compression === 'low' ? 'selected' : ''}>H.264 Low</option>
-          <option value="hevc" ${cam.compression === 'hevc' ? 'selected' : ''}>H.265+ HEVC</option>
-        </select>
 
-        <!-- Dynamic Manual Toggle Switch -->
-        <label class="switch" title="${isEnabled ? 'Recording Active - Click to Disable' : 'Recording Paused - Click to Enable'}">
-          <input type="checkbox" ${isEnabled ? 'checked' : ''} onchange="toggleCameraRecording('${cam.name}', this.checked)">
-          <span class="slider"></span>
-        </label>
-
-        <div class="camera-status-badge ${badgeClass}">
-          <span class="pulse-dot ${dotColor}"></span>
-          <span>${cam.status}</span>
+      <!-- Live MJPEG Stream / Offline View -->
+      ${isEnabled ? `
+        <img src="${streamUrl}" alt="${cam.name} Live Stream" class="camera-feed-img" onerror="this.onerror=null; this.src='/api/cameras/${encodeURIComponent(cam.name)}/snapshot';" />
+      ` : `
+        <div style="height: 240px; display: flex; flex-direction: column; align-items: center; justify-content: center; color: var(--text-muted); background: #0b0f19;">
+          <i data-lucide="video-off" style="width: 36px; height: 36px; margin-bottom: 8px;"></i>
+          <p style="font-size: 13px;">Camera Recording Disabled</p>
         </div>
+      `}
 
-        ${canPreview ? `
-          <button class="btn btn-live btn-sm" onclick="openLivePreviewModal('${cam.name}')">
-            <i data-lucide="eye" style="width: 12px; height: 12px;"></i> Live View
-          </button>
-        ` : ''}
+      <!-- Bottom Bar Overlay -->
+      <div class="tile-overlay-bottom">
+        <div style="font-size: 11px; color: #fff; font-weight: 500;">
+          Status: <strong style="color: ${isOnline ? '#10b981' : '#ef4444'};">${statusLabel}</strong>
+        </div>
+        <div style="display: flex; align-items: center; gap: 8px;">
+          <select class="dashboard-compression-select" onchange="changeCameraCompression('${cam.name}', this.value)" style="background: rgba(0,0,0,0.7); border: 1px solid rgba(255,255,255,0.2); border-radius: 4px; padding: 2px 6px; color: #fff; font-size: 11px;">
+            <option value="copy" ${cam.compression === 'copy' ? 'selected' : ''}>Copy</option>
+            <option value="high" ${cam.compression === 'high' ? 'selected' : ''}>High</option>
+            <option value="medium" ${cam.compression === 'medium' ? 'selected' : ''}>Medium</option>
+            <option value="low" ${cam.compression === 'low' ? 'selected' : ''}>Low</option>
+            <option value="hevc" ${cam.compression === 'hevc' ? 'selected' : ''}>HEVC</option>
+          </select>
+          <label class="switch" title="Toggle Recording">
+            <input type="checkbox" ${isEnabled ? 'checked' : ''} onchange="toggleCameraRecording('${cam.name}', this.checked)">
+            <span class="slider"></span>
+          </label>
+        </div>
       </div>
     `;
-    cameraListContainer.appendChild(item);
+
+    cameraListContainer.appendChild(card);
   });
 
   lucide.createIcons();
