@@ -271,18 +271,18 @@ async function getLogicalDrives() {
 /**
  * Recursively scans a directory for all .mp4 recording files.
  */
-async function scanRecordingsRecursively(dir) {
+async function scanRecordingsRecursively(dir, baseDir = dir) {
   let results = [];
   try {
     const entries = await fs.readdir(dir, { withFileTypes: true });
     for (const entry of entries) {
       const fullPath = path.join(dir, entry.name);
       if (entry.isDirectory()) {
-        const subResults = await scanRecordingsRecursively(fullPath);
+        const subResults = await scanRecordingsRecursively(fullPath, baseDir);
         results = results.concat(subResults);
       } else if (entry.isFile() && entry.name.endsWith('.mp4')) {
         const stat = await fs.stat(fullPath);
-        const relativePath = path.relative(dir, fullPath).replace(/\\/g, '/');
+        const relativePath = path.relative(baseDir, fullPath).replace(/\\/g, '/');
         results.push({
           fullPath,
           relativePath,

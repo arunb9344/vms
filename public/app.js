@@ -418,6 +418,39 @@ function renderCameras(cameras) {
     return;
   }
 
+  // Check if camera tiles already exist in DOM to update in place (prevents resetting enlarged/fullscreen views)
+  const existingCards = Array.from(cameraListContainer.querySelectorAll('.camera-card'));
+  if (existingCards.length === cameras.length) {
+    cameras.forEach((cam, index) => {
+      const card = document.getElementById(`cam-tile-${index}`);
+      if (!card) return;
+
+      const isOnline = cam.status === 'recording' || cam.status === 'online';
+
+      let statusDot = 'red';
+      let statusLabel = cam.status;
+      if (cam.status === 'recording') {
+        statusDot = 'green';
+        statusLabel = '30-50 FPS Live';
+      } else if (cam.status === 'online') {
+        statusDot = 'green-static';
+        statusLabel = 'Online';
+      }
+
+      // Update pulse dot in-place
+      const pulseDotEl = card.querySelector('.pulse-dot');
+      if (pulseDotEl) pulseDotEl.className = `pulse-dot ${statusDot}`;
+
+      // Update status text in-place
+      const statusTextEl = card.querySelector('.tile-overlay-bottom strong');
+      if (statusTextEl) {
+        statusTextEl.textContent = statusLabel;
+        statusTextEl.style.color = isOnline ? '#10b981' : '#ef4444';
+      }
+    });
+    return;
+  }
+
   // Preserve active grid layout class
   cameraListContainer.className = `camera-list grid-${currentGridMode}`;
   cameraListContainer.innerHTML = '';
@@ -725,7 +758,8 @@ function playVideo(filename, cameraName, created, sizeMb, encodedRelativePath = 
   modalVideoMeta.textContent = `Recorded: ${created} | Size: ${sizeMb} MB | File: ${filename}`;
   
   const rawPath = encodedRelativePath ? decodeURIComponent(encodedRelativePath) : filename;
-  const safePath = rawPath.split('/').map(encodeURIComponent).join('/');
+  const normalizedPath = rawPath.replace(/\\/g, '/');
+  const safePath = normalizedPath.split('/').map(encodeURIComponent).join('/');
   playbackVideo.src = `/recordings/${safePath}`;
   videoModal.classList.add('active');
   
