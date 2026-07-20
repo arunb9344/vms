@@ -793,6 +793,10 @@ export function startWebServer(config, recorders, onStoragePathChange) {
       await fs.writeJson(configPath, currentConfig, { spaces: 2 });
 
       config.cameras = currentConfig.cameras;
+      const rec = recorders.find(r => r.camera.name.toLowerCase() === name.toLowerCase());
+      if (rec) {
+        rec.camera.streamType = streamType;
+      }
       res.json({ success: true, camera: targetCam });
     } catch (err) {
       console.error('[Web Server] Failed to save camera stream type preference:', err.message);

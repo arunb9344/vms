@@ -447,6 +447,16 @@ function renderCameras(cameras) {
         statusTextEl.textContent = statusLabel;
         statusTextEl.style.color = isOnline ? '#10b981' : '#ef4444';
       }
+
+      // Update stream type badge in-place
+      const badge = card.querySelector('.stream-toggle-btn');
+      const streamType = cam.streamType || 'sub';
+      if (badge) {
+        badge.textContent = streamType === 'main' ? 'MAIN (HD)' : 'SUB (SD)';
+        badge.style.background = streamType === 'main' ? 'rgba(16, 185, 129, 0.25)' : 'rgba(59, 130, 246, 0.25)';
+        badge.style.color = streamType === 'main' ? '#10b981' : '#60a5fa';
+        badge.style.borderColor = streamType === 'main' ? 'rgba(16, 185, 129, 0.4)' : 'rgba(59, 130, 246, 0.4)';
+      }
     });
     return;
   }
@@ -1194,11 +1204,28 @@ window.executeStopServer = async function() {
  * Toggles a single camera between Mainstream (HD) and Substream (SD).
  */
 window.toggleCameraStreamType = async function(name) {
-  const cam = globalCameras.find(c => c.name.toLowerCase() === name.toLowerCase());
-  if (!cam) return;
+  const index = globalCameras.findIndex(c => c.name.toLowerCase() === name.toLowerCase());
+  if (index === -1) return;
 
+  const cam = globalCameras[index];
   const newStreamType = (cam.streamType === 'main') ? 'sub' : 'main';
   cam.streamType = newStreamType;
+
+  // Immediately update UI tile DOM
+  const card = document.getElementById(`cam-tile-${index}`);
+  if (card) {
+    const img = card.querySelector('.camera-feed-img');
+    if (img) {
+      img.src = `/api/cameras/${encodeURIComponent(name)}/stream?stream=${newStreamType}&cachebust=${Date.now()}`;
+    }
+    const badge = card.querySelector('.stream-toggle-btn');
+    if (badge) {
+      badge.textContent = newStreamType === 'main' ? 'MAIN (HD)' : 'SUB (SD)';
+      badge.style.background = newStreamType === 'main' ? 'rgba(16, 185, 129, 0.25)' : 'rgba(59, 130, 246, 0.25)';
+      badge.style.color = newStreamType === 'main' ? '#10b981' : '#60a5fa';
+      badge.style.borderColor = newStreamType === 'main' ? 'rgba(16, 185, 129, 0.4)' : 'rgba(59, 130, 246, 0.4)';
+    }
+  }
 
   try {
     await fetch(`/api/cameras/${encodeURIComponent(name)}/stream-type`, {
@@ -1208,26 +1235,6 @@ window.toggleCameraStreamType = async function(name) {
     });
   } catch (e) {
     console.error('Failed to save camera stream type:', e.message);
-  }
-
-  // Update card image source to reload with new stream type
-  const card = Array.from(document.querySelectorAll('.camera-card')).find(c => {
-    const titleEl = c.querySelector('.tile-title-badge span:nth-child(2)');
-    return titleEl && titleEl.textContent === name;
-  });
-
-  if (card) {
-    const img = card.querySelector('.camera-feed-img');
-    if (img) {
-      img.src = `/api/cameras/${encodeURIComponent(name)}/stream?stream=${newStreamType}&t=${Date.now()}`;
-    }
-    const badge = card.querySelector('.stream-toggle-btn');
-    if (badge) {
-      badge.textContent = newStreamType === 'main' ? 'MAIN (HD)' : 'SUB (SD)';
-      badge.style.background = newStreamType === 'main' ? 'rgba(16, 185, 129, 0.25)' : 'rgba(59, 130, 246, 0.25)';
-      badge.style.color = newStreamType === 'main' ? '#10b981' : '#60a5fa';
-      badge.style.borderColor = newStreamType === 'main' ? 'rgba(16, 185, 129, 0.4)' : 'rgba(59, 130, 246, 0.4)';
-    }
   }
 };
 
