@@ -729,13 +729,29 @@ export function startWebServer(config, recorders, onStoragePathChange) {
 
       // Determine stream quality type (Mainstream vs Substream)
       const requestedStream = req.query.stream || recorder.camera.streamType || 'sub';
-      let targetRtspUri = uris.rtspUri;
+      let targetRtspUri = uris.rtspUri || uris.substreamRtspUri;
 
-      if (requestedStream === 'sub' && uris.substreamRtspUri) {
-        targetRtspUri = uris.substreamRtspUri;
+      if (requestedStream === 'main') {
+        if (uris.rtspUri) targetRtspUri = uris.rtspUri;
+        if (targetRtspUri) {
+          targetRtspUri = targetRtspUri
+            .replace('subtype=1', 'subtype=0')
+            .replace('/102', '/101')
+            .replace('/sub', '/main')
+            .replace('stream=1', 'stream=0');
+        }
+      } else if (requestedStream === 'sub') {
+        if (uris.substreamRtspUri) targetRtspUri = uris.substreamRtspUri;
+        if (targetRtspUri) {
+          targetRtspUri = targetRtspUri
+            .replace('subtype=0', 'subtype=1')
+            .replace('/101', '/102')
+            .replace('/main', '/sub')
+            .replace('stream=0', 'stream=1');
+        }
       }
 
-      console.log(`[Web Server] Starting real-time MJPEG stream (${requestedStream.toUpperCase()}) for "${name}"...`);
+      console.log(`[Web Server] Starting real-time MJPEG stream (${requestedStream.toUpperCase()}) for "${name}" -> ${targetRtspUri}`);
 
       // Set boundary-based MJPEG stream headers
       res.setHeader('Content-Type', 'multipart/x-mixed-replace; boundary=ffmpeg');

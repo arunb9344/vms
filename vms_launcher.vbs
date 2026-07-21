@@ -25,20 +25,42 @@ For i = 1 To 15
     On Error GoTo 0
 Next
 
-' Check Chrome and Edge browser executable paths
-chrome64 = WshShell.ExpandEnvironmentStrings("%ProgramFiles%") & "\Google\Chrome\Application\chrome.exe"
-chrome86 = WshShell.ExpandEnvironmentStrings("%ProgramFiles(x86)%") & "\Google\Chrome\Application\chrome.exe"
-chromeUser = WshShell.ExpandEnvironmentStrings("%LocalAppData%") & "\Google\Chrome\Application\chrome.exe"
-edgePath = WshShell.ExpandEnvironmentStrings("%ProgramFiles(x86)%") & "\Microsoft\Edge\Application\msedge.exe"
+' 1. Check Windows Registry App Paths for Chrome
+chromeExe = ""
+On Error Resume Next
+chromeExe = WshShell.RegRead("HKLM\SOFTWARE\Microsoft\Windows\CurrentVersion\App Paths\chrome.exe\")
+If chromeExe = "" Then
+    chromeExe = WshShell.RegRead("HKCU\SOFTWARE\Microsoft\Windows\CurrentVersion\App Paths\chrome.exe\")
+End If
+On Error GoTo 0
 
-If fso.FileExists(chrome64) Then
-    WshShell.Run Chr(34) & chrome64 & Chr(34) & " " & targetUrl
-ElseIf fso.FileExists(chrome86) Then
-    WshShell.Run Chr(34) & chrome86 & Chr(34) & " " & targetUrl
-ElseIf fso.FileExists(chromeUser) Then
-    WshShell.Run Chr(34) & chromeUser & Chr(34) & " " & targetUrl
-ElseIf fso.FileExists(edgePath) Then
-    WshShell.Run Chr(34) & edgePath & Chr(34) & " " & targetUrl
+' 2. Check hardcoded standard Windows installation paths for Chrome (bypassing 32-bit WOW64 redirection)
+If chromeExe = "" Or Not fso.FileExists(chromeExe) Then
+    sysDrive = WshShell.ExpandEnvironmentStrings("%SystemDrive%")
+    cPath1 = sysDrive & "\Program Files\Google\Chrome\Application\chrome.exe"
+    cPath2 = sysDrive & "\Program Files (x86)\Google\Chrome\Application\chrome.exe"
+    cPath3 = WshShell.ExpandEnvironmentStrings("%LocalAppData%") & "\Google\Chrome\Application\chrome.exe"
+    cPath4 = WshShell.ExpandEnvironmentStrings("%ProgramFiles%") & "\Google\Chrome\Application\chrome.exe"
+    
+    If fso.FileExists(cPath1) Then
+        chromeExe = cPath1
+    ElseIf fso.FileExists(cPath2) Then
+        chromeExe = cPath2
+    ElseIf fso.FileExists(cPath3) Then
+        chromeExe = cPath3
+    ElseIf fso.FileExists(cPath4) Then
+        chromeExe = cPath4
+    End If
+End If
+
+' Launch Google Chrome if executable path is resolved, otherwise invoke Windows shell "start chrome"
+If chromeExe <> "" And fso.FileExists(chromeExe) Then
+    WshShell.Run Chr(34) & chromeExe & Chr(34) & " " & targetUrl
 Else
-    WshShell.Run targetUrl
+    On Error Resume Next
+    WshShell.Run "cmd /c start chrome " & targetUrl, 0, False
+    If Err.Number <> 0 Then
+        WshShell.Run targetUrl
+    End If
+    On Error GoTo 0
 End If
