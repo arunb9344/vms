@@ -729,54 +729,25 @@ export function startWebServer(config, recorders, onStoragePathChange) {
         throw new Error(`No RTSP stream URI found for camera "${name}".`);
       }
 
-      // Determine stream quality type (Mainstream vs Substream)
-      const requestedStream = req.query.stream || recorder.camera.streamType || 'sub';
-      let targetRtspUri = uris.rtspUri || uris.substreamRtspUri;
+      let targetRtspUri = uris.substreamRtspUri || uris.rtspUri;
 
-      if (requestedStream === 'main') {
-        if (uris.rtspUri) targetRtspUri = uris.rtspUri;
-        if (targetRtspUri) {
-          targetRtspUri = targetRtspUri
-            .replace('subtype=1', 'subtype=0')
-            .replace('/102', '/101')
-            .replace('/sub', '/main')
-            .replace('stream=1', 'stream=0');
-        }
-      } else if (requestedStream === 'sub') {
-        if (uris.substreamRtspUri) targetRtspUri = uris.substreamRtspUri;
-        if (targetRtspUri) {
-          targetRtspUri = targetRtspUri
-            .replace('subtype=0', 'subtype=1')
-            .replace('/101', '/102')
-            .replace('/main', '/sub')
-            .replace('stream=0', 'stream=1');
-        }
-      }
-
-      console.log(`[Web Server] Starting real-time MJPEG stream (${requestedStream.toUpperCase()}) for "${name}" -> ${targetRtspUri}`);
+      console.log(`[Web Server] Starting real-time MJPEG stream for "${name}" -> ${targetRtspUri}`);
 
       // Set boundary-based MJPEG stream headers
       res.setHeader('Content-Type', 'multipart/x-mixed-replace; boundary=ffmpeg');
       res.setHeader('Connection', 'close');
       res.setHeader('Cache-Control', 'no-store, no-cache, must-revalidate, private');
 
-      // Spawn FFmpeg to decode target RTSP stream (Main or Sub) and re-encode to MJPEG stream on stdout
+      // Spawn FFmpeg to decode RTSP stream and re-encode to MJPEG stream on stdout
       const args = [
         '-rtsp_transport', 'tcp',
         '-timeout', '5000000',
         '-i', targetRtspUri,
-        '-an'
+        '-an',
+        '-q:v', '5',
+        '-f', 'mpjpeg',
+        'pipe:1'
       ];
-
-      if (requestedStream === 'sub') {
-        // Substream: Scale to fast 640px SD resolution for low CPU & bandwidth
-        args.push('-vf', 'scale=640:-2', '-q:v', '7');
-      } else {
-        // Mainstream: Full HD camera native resolution
-        args.push('-q:v', '3');
-      }
-
-      args.push('-f', 'mpjpeg', 'pipe:1');
 
       const proc = spawn(ffmpegStatic, args);
       proc.stdout.pipe(res);

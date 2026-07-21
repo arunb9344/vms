@@ -139,10 +139,6 @@
                   <i data-lucide="rotate-cw" style="width: 14px; height: 14px;"></i> Tour: OFF
                 </button>
 
-                <!-- Master Stream Mode Toggle -->
-                <button type="button" class="btn btn-secondary btn-sm" id="master-stream-btn" onclick="toggleAllCamerasStreamType()" title="Set ALL cameras quality at once">
-                  <i data-lucide="layers" style="width: 14px; height: 14px;"></i> Set All: MAIN (HD)
-                </button>
 
                 <!-- Fullscreen Matrix Video Wall -->
                 <button type="button" class="btn btn-primary btn-sm" onclick="toggleMatrixFullscreen()" title="Fullscreen Video Wall Monitor">
@@ -423,20 +419,7 @@
                 * Note: If your camera is configured to H.265 (HEVC) in firmware, select H.264 Transcode to preview recorded videos directly in Google Chrome.
               </span>
             </div>
-            <div class="form-group" style="margin-bottom: 16px;">
-              <label for="cam-default-stream" style="display: block; font-size: 13px; color: var(--text-muted); margin-bottom: 6px; font-weight: 500;">Default Live View Quality</label>
-              <select id="cam-default-stream" style="width: 100%; background: rgba(0, 0, 0, 0.2); border: 1px solid rgba(255, 255, 255, 0.08); border-radius: 8px; padding: 10px; color: #fff; font-family: var(--font-family); font-size: 14px; outline: none; transition: var(--transition);">
-                <option value="main">Mainstream (HD 1080p / 4K - High Clarity)</option>
-                <option value="sub" selected>Substream (SD / 360p - Low CPU & Fast Matrix)</option>
-              </select>
-            </div>
-            <div class="form-group" style="margin-bottom: 16px;">
-              <label for="cam-custom-substream" style="display: block; font-size: 13px; color: var(--text-muted); margin-bottom: 6px; font-weight: 500;">Custom Substream RTSP URI (Optional)</label>
-              <input type="text" id="cam-custom-substream" placeholder="e.g. rtsp://192.168.0.59:554/cam/realmonitor?channel=1&subtype=1" style="width: 100%; background: rgba(0, 0, 0, 0.2); border: 1px solid rgba(255, 255, 255, 0.08); border-radius: 8px; padding: 10px; color: #fff; font-family: var(--font-family); font-size: 13px; outline: none; transition: var(--transition);">
-              <span style="font-size: 11px; color: var(--text-dim); display: block; margin-top: 4px;">
-                Leave empty for automatic ONVIF Substream profile detection.
-              </span>
-            </div>
+
             <div class="form-group" style="margin-bottom: 16px; display: flex; align-items: center; gap: 10px;">
               <input type="checkbox" id="cam-enabled" checked style="width: 18px; height: 18px; accent-color: var(--primary);">
               <label for="cam-enabled" style="margin-bottom: 0; font-weight: 500; cursor: pointer; color: #fff;">Enable Continuous Recording</label>

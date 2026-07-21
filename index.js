@@ -76,13 +76,22 @@ async function main() {
   config.storage_path = path.resolve(config.storage_path);
   console.log(`[System] Target Storage Directory: "${config.storage_path}"`);
 
-  // Ensure storage path folder exists
+  // Ensure storage path folder exists; if target drive (e.g. E:\) does not exist on a new PC, fall back safely to C:\EyeTech_Recordings
   try {
     await fs.ensureDir(config.storage_path);
-    console.log(`[System] Storage directory verified/created.`);
+    console.log(`[System] Storage directory verified/created: "${config.storage_path}"`);
   } catch (error) {
-    console.error(`[System] [Error] Failed to create storage directory: ${error.message}`);
-    process.exit(1);
+    console.warn(`[System] [Warning] Configured storage directory "${config.storage_path}" is not accessible (${error.message}). Falling back to C:\\EyeTech_Recordings...`);
+    config.storage_path = path.resolve('C:\\EyeTech_Recordings');
+    try {
+      await fs.ensureDir(config.storage_path);
+      console.log(`[System] Fallback storage directory verified/created: "${config.storage_path}"`);
+    } catch (fallbackErr) {
+      const appDataFallback = path.join(process.env.APPDATA || '.', 'EyeTechVMS', 'recordings');
+      config.storage_path = path.resolve(appDataFallback);
+      await fs.ensureDir(config.storage_path);
+      console.log(`[System] AppData fallback storage directory created: "${config.storage_path}"`);
+    }
   }
 
   // 1. Initialize and start storage rotation management

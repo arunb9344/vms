@@ -1,19 +1,9 @@
 {
   "web_port": 3000,
   "admin_password": "EyeTechAdmin2026",
-  "storage_path": "E:\\Recordings_Test",
+  "storage_path": "C:\\EyeTech_Recordings",
   "max_storage_gb": 10,
   "auto_overwrite": true,
   "chunk_minutes": 1,
-  "cameras": [
-    {
-      "name": "Test",
-      "ip": "192.168.0.52",
-      "port": 80,
-      "username": "onvif",
-      "password": "Admin@123",
-      "enabled": true,
-      "compression": "low"
-    }
-  ]
+  "cameras": []
 }

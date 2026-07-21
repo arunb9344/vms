@@ -492,9 +492,8 @@ function renderCameras(cameras) {
       }
     };
 
-    const activeStreamType = cam.streamType || 'sub';
     const streamUrl = isOnline 
-      ? `/api/cameras/${encodeURIComponent(cam.name)}/stream?stream=${activeStreamType}`
+      ? `/api/cameras/${encodeURIComponent(cam.name)}/stream`
       : `/api/cameras/${encodeURIComponent(cam.name)}/snapshot`;
 
     card.innerHTML = `
@@ -506,10 +505,6 @@ function renderCameras(cameras) {
           <span style="font-size: 11px; opacity: 0.8; font-weight: normal;">(${cam.ip})</span>
         </div>
         <div style="display: flex; align-items: center; gap: 6px;">
-          <select class="stream-select-dropdown" onchange="changeCameraStreamType('${cam.name}', this.value)" title="Switch stream quality" style="background: rgba(15, 23, 42, 0.85); color: ${activeStreamType === 'main' ? '#34d399' : '#60a5fa'}; border: 1px solid ${activeStreamType === 'main' ? 'rgba(16, 185, 129, 0.4)' : 'rgba(59, 130, 246, 0.4)'}; border-radius: 4px; padding: 2px 6px; font-size: 11px; font-weight: 600; cursor: pointer; outline: none;">
-            <option value="sub" ${activeStreamType === 'sub' ? 'selected' : ''} style="background: #0f172a; color: #60a5fa;">⚡ Substream (SD)</option>
-            <option value="main" ${activeStreamType === 'main' ? 'selected' : ''} style="background: #0f172a; color: #34d399;">🎬 Mainstream (HD)</option>
-          </select>
           <button type="button" class="tile-btn" onclick="grabTileSnapshot('${cam.name}')" title="Grab JPEG Snapshot">
             <i data-lucide="camera" style="width: 14px; height: 14px;"></i>
           </button>
@@ -1215,80 +1210,4 @@ window.executeStopServer = async function() {
   }
 };
 
-/**
- * Changes a single camera's stream quality type via dropdown select menu.
- */
-window.changeCameraStreamType = async function(name, newStreamType) {
-  const index = globalCameras.findIndex(c => c.name.toLowerCase() === name.toLowerCase());
-  if (index === -1) return;
 
-  const cam = globalCameras[index];
-  cam.streamType = newStreamType;
-
-  // Immediately update UI tile DOM feed source
-  const card = document.getElementById(`cam-tile-${index}`);
-  if (card) {
-    const img = card.querySelector('.camera-feed-img');
-    if (img) {
-      // Force browser to close existing MJPEG stream socket immediately
-      img.src = 'data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7';
-      setTimeout(() => {
-        img.src = `/api/cameras/${encodeURIComponent(name)}/stream?stream=${newStreamType}&cachebust=${Date.now()}`;
-      }, 150);
-    }
-    const select = card.querySelector('.stream-select-dropdown');
-    if (select) {
-      select.value = newStreamType;
-      select.style.color = newStreamType === 'main' ? '#34d399' : '#60a5fa';
-      select.style.borderColor = newStreamType === 'main' ? 'rgba(16, 185, 129, 0.4)' : 'rgba(59, 130, 246, 0.4)';
-    }
-  }
-
-  try {
-    await fetch(`/api/cameras/${encodeURIComponent(name)}/stream-type`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ streamType: newStreamType })
-    });
-  } catch (e) {
-    console.error('Failed to save camera stream type:', e.message);
-  }
-};
-
-/**
- * Legacy toggle helper for backward compatibility.
- */
-window.toggleCameraStreamType = function(name) {
-  const cam = globalCameras.find(c => c.name.toLowerCase() === name.toLowerCase());
-  if (!cam) return;
-  const newType = (cam.streamType === 'main') ? 'sub' : 'main';
-  changeCameraStreamType(name, newType);
-};
-
-/**
- * Toggles ALL cameras simultaneously between Mainstream and Substream.
- */
-window.toggleAllCamerasStreamType = async function() {
-  if (!globalCameras || globalCameras.length === 0) return;
-
-  const anySub = globalCameras.some(c => (c.streamType || 'sub') === 'sub');
-  const targetType = anySub ? 'main' : 'sub';
-
-  for (const cam of globalCameras) {
-    cam.streamType = targetType;
-    try {
-      await fetch(`/api/cameras/${encodeURIComponent(cam.name)}/stream-type`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ streamType: targetType })
-      });
-    } catch (e) {}
-  }
-
-  const masterBtn = document.getElementById('master-stream-btn');
-  if (masterBtn) {
-    masterBtn.innerHTML = `<i data-lucide="layers" style="width: 14px; height: 14px;"></i> All: ${targetType === 'main' ? 'MAIN (HD)' : 'SUB (SD)'}`;
-  }
-
-  renderCameras(globalCameras);
-};
