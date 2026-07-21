@@ -656,6 +656,8 @@ export function startWebServer(config, recorders, onStoragePathChange) {
         port: r.camera.port || 80,
         enabled: isEnabled,
         compression: r.camera.compression || 'copy',
+        streamType: r.camera.streamType || 'sub',
+        custom_substream_url: r.camera.custom_substream_url || '',
         status: status
       };
     }));

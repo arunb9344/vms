@@ -451,7 +451,7 @@ function renderCameras(cameras) {
       // Update stream select dropdown in-place
       const select = card.querySelector('.stream-select-dropdown');
       const streamType = cam.streamType || 'sub';
-      if (select && document.activeElement !== select) {
+      if (select && select.value !== streamType && document.activeElement !== select) {
         select.value = streamType;
         select.style.color = streamType === 'main' ? '#34d399' : '#60a5fa';
         select.style.borderColor = streamType === 'main' ? 'rgba(16, 185, 129, 0.4)' : 'rgba(59, 130, 246, 0.4)';
