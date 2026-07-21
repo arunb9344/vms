@@ -1230,7 +1230,11 @@ window.changeCameraStreamType = async function(name, newStreamType) {
   if (card) {
     const img = card.querySelector('.camera-feed-img');
     if (img) {
-      img.src = `/api/cameras/${encodeURIComponent(name)}/stream?stream=${newStreamType}&cachebust=${Date.now()}`;
+      // Force browser to close existing MJPEG stream socket immediately
+      img.src = 'data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7';
+      setTimeout(() => {
+        img.src = `/api/cameras/${encodeURIComponent(name)}/stream?stream=${newStreamType}&cachebust=${Date.now()}`;
+      }, 150);
     }
     const select = card.querySelector('.stream-select-dropdown');
     if (select) {

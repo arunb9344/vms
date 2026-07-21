@@ -153,6 +153,10 @@ export async function getCameraUris(camera) {
     }
 
     // Ensure rtspUri is TRUE Mainstream and substreamRtspUri is TRUE Substream
+    const authString = (username && password) ? `${encodeURIComponent(username)}:${encodeURIComponent(password)}@` : '';
+    const dahuaMainCandidate = `rtsp://${authString}${ip}:554/cam/realmonitor?channel=1&subtype=0`;
+    const dahuaSubCandidate  = `rtsp://${authString}${ip}:554/cam/realmonitor?channel=1&subtype=1`;
+
     if (rtspUri) {
       if (rtspUri.includes('subtype=1')) {
         let mainRtsp = rtspUri.replace('subtype=1', 'subtype=0');
@@ -171,6 +175,9 @@ export async function getCameraUris(camera) {
         if (!substreamRtspUri) substreamRtspUri = rtspUri;
         rtspUri = mainRtsp;
       }
+    } else {
+      rtspUri = dahuaMainCandidate;
+      substreamRtspUri = dahuaSubCandidate;
     }
 
     // Ensure substreamRtspUri is correctly constructed if missing or identical to rtspUri
@@ -183,6 +190,8 @@ export async function getCameraUris(camera) {
         substreamRtspUri = rtspUri.replace('/main', '/sub');
       } else if (rtspUri.includes('stream=0')) {
         substreamRtspUri = rtspUri.replace('stream=0', 'stream=1');
+      } else {
+        substreamRtspUri = dahuaSubCandidate;
       }
     }
 

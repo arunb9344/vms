@@ -763,11 +763,18 @@ export function startWebServer(config, recorders, onStoragePathChange) {
         '-rtsp_transport', 'tcp',
         '-timeout', '5000000',
         '-i', targetRtspUri,
-        '-an',
-        '-f', 'mpjpeg',
-        '-q:v', '5', // Quality factor
-        'pipe:1'
+        '-an'
       ];
+
+      if (requestedStream === 'sub') {
+        // Substream: Scale to fast 640px SD resolution for low CPU & bandwidth
+        args.push('-vf', 'scale=640:-2', '-q:v', '7');
+      } else {
+        // Mainstream: Full HD camera native resolution
+        args.push('-q:v', '3');
+      }
+
+      args.push('-f', 'mpjpeg', 'pipe:1');
 
       const proc = spawn(ffmpegStatic, args);
       proc.stdout.pipe(res);
