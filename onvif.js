@@ -70,22 +70,64 @@ export async function getCameraUris(camera) {
       return { rtspUri: null, snapshotUri: null };
     }
 
-    const firstProfile = profiles[0];
-    let profileToken = firstProfile.token || (firstProfile.$ && firstProfile.$.token);
-    
-    if (!profileToken) {
+    // Support explicit user-configured Custom Substream RTSP URL if defined
+    let customSubstream = camera.custom_substream_url || camera.substream_rtsp_uri;
+    if (customSubstream && customSubstream.trim()) {
+      let injectedSub = injectCredentials(customSubstream.trim(), username, password);
+      console.log(`[ONVIF] Camera "${name}" using custom Substream RTSP URI.`);
+      const firstProfile = profiles[0];
+      let profileToken = firstProfile.token || (firstProfile.$ && firstProfile.$.token);
+      let rtspUri = null;
+      try {
+        const res = await device.media.getStreamUri({ protocol: 'RTSP', profileToken });
+        if (res && res.uri) rtspUri = injectCredentials(res.uri, username, password);
+      } catch(e) {}
+      let snapshotUri = null;
+      try {
+        const snapRes = await device.media.getSnapshotUri({ profileToken });
+        if (snapRes && snapRes.uri) snapshotUri = injectCredentials(snapRes.uri, username, password);
+      } catch(e) {}
+
+      const uris = { rtspUri, substreamRtspUri: injectedSub, snapshotUri };
+      cameraCache.set(cacheKey, uris);
+      return uris;
+    }
+
+    // Sort ONVIF profiles: highest resolution = Mainstream, lower resolution = Substream
+    let mainProfile = profiles[0];
+    let subProfile = profiles.length > 1 ? profiles[1] : null;
+
+    if (profiles.length > 1) {
+      profiles.sort((a, b) => {
+        const getRes = p => {
+          if (p.videoEncoderConfiguration && p.videoEncoderConfiguration.resolution) {
+            const r = p.videoEncoderConfiguration.resolution;
+            return (parseInt(r.width) || 0) * (parseInt(r.height) || 0);
+          }
+          return 0;
+        };
+        return getRes(b) - getRes(a);
+      });
+      mainProfile = profiles[0];
+      subProfile = profiles[1];
+    }
+
+    let mainToken = mainProfile.token || (mainProfile.$ && mainProfile.$.token);
+    let subToken = subProfile ? (subProfile.token || (subProfile.$ && subProfile.$.token)) : null;
+
+    if (!mainToken) {
       console.warn(`[ONVIF] [Warning] Camera "${name}" (${ip}) profile token is empty.`);
       return { rtspUri: null, substreamRtspUri: null, snapshotUri: null };
     }
 
-    console.log(`[ONVIF] Camera "${name}" Mainstream profile token: ${profileToken}`);
+    console.log(`[ONVIF] Camera "${name}" Mainstream profile: ${mainToken}, Substream profile: ${subToken || 'None'}`);
 
     // 1. Fetch Mainstream RTSP URI
     let rtspUri = null;
     try {
       const streamUriResult = await device.media.getStreamUri({
         protocol: 'RTSP',
-        profileToken: profileToken
+        profileToken: mainToken
       });
       if (streamUriResult && streamUriResult.uri) {
         rtspUri = injectCredentials(streamUriResult.uri, username, password);
@@ -94,24 +136,19 @@ export async function getCameraUris(camera) {
       console.warn(`[ONVIF] Camera "${name}" failed to return Mainstream RTSP URI:`, rtspErr.message);
     }
 
-    // 2. Fetch Substream RTSP URI (Profile 2 or pattern fallback)
+    // 2. Fetch Substream RTSP URI
     let substreamRtspUri = null;
-    let subProfile = profiles.length > 1 ? profiles[1] : null;
-    if (subProfile) {
-      let subToken = subProfile.token || (subProfile.$ && subProfile.$.token);
-      if (subToken) {
-        try {
-          const subResult = await device.media.getStreamUri({
-            protocol: 'RTSP',
-            profileToken: subToken
-          });
-          if (subResult && subResult.uri) {
-            substreamRtspUri = injectCredentials(subResult.uri, username, password);
-            console.log(`[ONVIF] Camera "${name}" Substream profile token: ${subToken}`);
-          }
-        } catch (subErr) {
-          console.warn(`[ONVIF] Camera "${name}" sub-profile query notice:`, subErr.message);
+    if (subToken) {
+      try {
+        const subResult = await device.media.getStreamUri({
+          protocol: 'RTSP',
+          profileToken: subToken
+        });
+        if (subResult && subResult.uri) {
+          substreamRtspUri = injectCredentials(subResult.uri, username, password);
         }
+      } catch (subErr) {
+        console.warn(`[ONVIF] Camera "${name}" sub-profile query notice:`, subErr.message);
       }
     }
 

@@ -448,14 +448,13 @@ function renderCameras(cameras) {
         statusTextEl.style.color = isOnline ? '#10b981' : '#ef4444';
       }
 
-      // Update stream type badge in-place
-      const badge = card.querySelector('.stream-toggle-btn');
+      // Update stream select dropdown in-place
+      const select = card.querySelector('.stream-select-dropdown');
       const streamType = cam.streamType || 'sub';
-      if (badge) {
-        badge.textContent = streamType === 'main' ? 'MAIN (HD)' : 'SUB (SD)';
-        badge.style.background = streamType === 'main' ? 'rgba(16, 185, 129, 0.25)' : 'rgba(59, 130, 246, 0.25)';
-        badge.style.color = streamType === 'main' ? '#10b981' : '#60a5fa';
-        badge.style.borderColor = streamType === 'main' ? 'rgba(16, 185, 129, 0.4)' : 'rgba(59, 130, 246, 0.4)';
+      if (select && document.activeElement !== select) {
+        select.value = streamType;
+        select.style.color = streamType === 'main' ? '#34d399' : '#60a5fa';
+        select.style.borderColor = streamType === 'main' ? 'rgba(16, 185, 129, 0.4)' : 'rgba(59, 130, 246, 0.4)';
       }
     });
     return;
@@ -507,9 +506,10 @@ function renderCameras(cameras) {
           <span style="font-size: 11px; opacity: 0.8; font-weight: normal;">(${cam.ip})</span>
         </div>
         <div style="display: flex; align-items: center; gap: 6px;">
-          <button type="button" class="tile-btn stream-toggle-btn ${activeStreamType === 'main' ? 'btn-main' : 'btn-sub'}" onclick="toggleCameraStreamType('${cam.name}')" title="Click to toggle stream quality (Mainstream for HD vs Substream for Low CPU)" style="font-size: 10px; font-weight: 700; padding: 2px 7px; border-radius: 4px; background: ${activeStreamType === 'main' ? 'rgba(16, 185, 129, 0.25)' : 'rgba(59, 130, 246, 0.25)'}; color: ${activeStreamType === 'main' ? '#10b981' : '#60a5fa'}; border: 1px solid ${activeStreamType === 'main' ? 'rgba(16, 185, 129, 0.4)' : 'rgba(59, 130, 246, 0.4)'};">
-            ${activeStreamType === 'main' ? 'MAIN (HD)' : 'SUB (SD)'}
-          </button>
+          <select class="stream-select-dropdown" onchange="changeCameraStreamType('${cam.name}', this.value)" title="Switch stream quality" style="background: rgba(15, 23, 42, 0.85); color: ${activeStreamType === 'main' ? '#34d399' : '#60a5fa'}; border: 1px solid ${activeStreamType === 'main' ? 'rgba(16, 185, 129, 0.4)' : 'rgba(59, 130, 246, 0.4)'}; border-radius: 4px; padding: 2px 6px; font-size: 11px; font-weight: 600; cursor: pointer; outline: none;">
+            <option value="sub" ${activeStreamType === 'sub' ? 'selected' : ''} style="background: #0f172a; color: #60a5fa;">⚡ Substream (SD)</option>
+            <option value="main" ${activeStreamType === 'main' ? 'selected' : ''} style="background: #0f172a; color: #34d399;">🎬 Mainstream (HD)</option>
+          </select>
           <button type="button" class="tile-btn" onclick="grabTileSnapshot('${cam.name}')" title="Grab JPEG Snapshot">
             <i data-lucide="camera" style="width: 14px; height: 14px;"></i>
           </button>
@@ -866,6 +866,11 @@ function openAddCameraForm() {
   camEnabledInput.checked = false; // Default: Disable (unchecked) as requested
   camCompressionInput.value = 'copy';
   
+  const defaultStreamEl = document.getElementById('cam-default-stream');
+  if (defaultStreamEl) defaultStreamEl.value = 'sub';
+  const customSubstreamEl = document.getElementById('cam-custom-substream');
+  if (customSubstreamEl) customSubstreamEl.value = '';
+  
   cameraModal.classList.add('active');
   lucide.createIcons();
 }
@@ -887,6 +892,11 @@ window.openEditCameraForm = function(cameraJsonStr) {
   camEnabledInput.checked = cameraObj.enabled !== false;
   camCompressionInput.value = cameraObj.compression || 'copy';
   
+  const defaultStreamEl = document.getElementById('cam-default-stream');
+  if (defaultStreamEl) defaultStreamEl.value = cameraObj.streamType || 'sub';
+  const customSubstreamEl = document.getElementById('cam-custom-substream');
+  if (customSubstreamEl) customSubstreamEl.value = cameraObj.custom_substream_url || '';
+  
   cameraModal.classList.add('active');
   lucide.createIcons();
 };
@@ -904,6 +914,9 @@ window.closeCameraModal = function() {
 async function handleCameraFormSubmit(e) {
   e.preventDefault();
   
+  const defaultStreamEl = document.getElementById('cam-default-stream');
+  const customSubstreamEl = document.getElementById('cam-custom-substream');
+
   const cameraObj = {
     name: camNameInput.value.trim(),
     ip: camIpInput.value.trim(),
@@ -911,7 +924,9 @@ async function handleCameraFormSubmit(e) {
     username: camUsernameInput.value.trim(),
     password: camPasswordInput.value,
     enabled: camEnabledInput.checked,
-    compression: camCompressionInput.value
+    compression: camCompressionInput.value,
+    streamType: defaultStreamEl ? defaultStreamEl.value : 'sub',
+    custom_substream_url: customSubstreamEl ? customSubstreamEl.value.trim() : ''
   };
 
   try {
@@ -1201,29 +1216,27 @@ window.executeStopServer = async function() {
 };
 
 /**
- * Toggles a single camera between Mainstream (HD) and Substream (SD).
+ * Changes a single camera's stream quality type via dropdown select menu.
  */
-window.toggleCameraStreamType = async function(name) {
+window.changeCameraStreamType = async function(name, newStreamType) {
   const index = globalCameras.findIndex(c => c.name.toLowerCase() === name.toLowerCase());
   if (index === -1) return;
 
   const cam = globalCameras[index];
-  const newStreamType = (cam.streamType === 'main') ? 'sub' : 'main';
   cam.streamType = newStreamType;
 
-  // Immediately update UI tile DOM
+  // Immediately update UI tile DOM feed source
   const card = document.getElementById(`cam-tile-${index}`);
   if (card) {
     const img = card.querySelector('.camera-feed-img');
     if (img) {
       img.src = `/api/cameras/${encodeURIComponent(name)}/stream?stream=${newStreamType}&cachebust=${Date.now()}`;
     }
-    const badge = card.querySelector('.stream-toggle-btn');
-    if (badge) {
-      badge.textContent = newStreamType === 'main' ? 'MAIN (HD)' : 'SUB (SD)';
-      badge.style.background = newStreamType === 'main' ? 'rgba(16, 185, 129, 0.25)' : 'rgba(59, 130, 246, 0.25)';
-      badge.style.color = newStreamType === 'main' ? '#10b981' : '#60a5fa';
-      badge.style.borderColor = newStreamType === 'main' ? 'rgba(16, 185, 129, 0.4)' : 'rgba(59, 130, 246, 0.4)';
+    const select = card.querySelector('.stream-select-dropdown');
+    if (select) {
+      select.value = newStreamType;
+      select.style.color = newStreamType === 'main' ? '#34d399' : '#60a5fa';
+      select.style.borderColor = newStreamType === 'main' ? 'rgba(16, 185, 129, 0.4)' : 'rgba(59, 130, 246, 0.4)';
     }
   }
 
@@ -1236,6 +1249,16 @@ window.toggleCameraStreamType = async function(name) {
   } catch (e) {
     console.error('Failed to save camera stream type:', e.message);
   }
+};
+
+/**
+ * Legacy toggle helper for backward compatibility.
+ */
+window.toggleCameraStreamType = function(name) {
+  const cam = globalCameras.find(c => c.name.toLowerCase() === name.toLowerCase());
+  if (!cam) return;
+  const newType = (cam.streamType === 'main') ? 'sub' : 'main';
+  changeCameraStreamType(name, newType);
 };
 
 /**
