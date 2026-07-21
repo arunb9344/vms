@@ -152,8 +152,29 @@ export async function getCameraUris(camera) {
       }
     }
 
-    // Pattern fallback for Substream if camera uses standard Hikvision / Dahua / CP PLUS URL formats
-    if (!substreamRtspUri && rtspUri) {
+    // Ensure rtspUri is TRUE Mainstream and substreamRtspUri is TRUE Substream
+    if (rtspUri) {
+      if (rtspUri.includes('subtype=1')) {
+        let mainRtsp = rtspUri.replace('subtype=1', 'subtype=0');
+        if (!substreamRtspUri) substreamRtspUri = rtspUri;
+        rtspUri = mainRtsp;
+      } else if (rtspUri.includes('/102')) {
+        let mainRtsp = rtspUri.replace('/102', '/101');
+        if (!substreamRtspUri) substreamRtspUri = rtspUri;
+        rtspUri = mainRtsp;
+      } else if (rtspUri.includes('/sub')) {
+        let mainRtsp = rtspUri.replace('/sub', '/main');
+        if (!substreamRtspUri) substreamRtspUri = rtspUri;
+        rtspUri = mainRtsp;
+      } else if (rtspUri.includes('stream=1')) {
+        let mainRtsp = rtspUri.replace('stream=1', 'stream=0');
+        if (!substreamRtspUri) substreamRtspUri = rtspUri;
+        rtspUri = mainRtsp;
+      }
+    }
+
+    // Ensure substreamRtspUri is correctly constructed if missing or identical to rtspUri
+    if (rtspUri && (!substreamRtspUri || substreamRtspUri === rtspUri)) {
       if (rtspUri.includes('subtype=0')) {
         substreamRtspUri = rtspUri.replace('subtype=0', 'subtype=1');
       } else if (rtspUri.includes('/101')) {
@@ -162,8 +183,6 @@ export async function getCameraUris(camera) {
         substreamRtspUri = rtspUri.replace('/main', '/sub');
       } else if (rtspUri.includes('stream=0')) {
         substreamRtspUri = rtspUri.replace('stream=0', 'stream=1');
-      } else {
-        substreamRtspUri = rtspUri;
       }
     }
 

@@ -28,5 +28,5 @@ Name: "{group}\Stop VMS Server"; Filename: "{app}\stop_vms.bat"; WorkingDir: "{a
 Name: "{commondesktop}\EyeTech VMS"; Filename: "{app}\vms_launcher.vbs"; WorkingDir: "{app}"
 
 [Run]
-; Auto-start VMS dashboard after installation completes successfully
-Filename: "{app}\vms_launcher.vbs"; Description: "Launch EyeTech VMS now"; Flags: postinstall shellexec
+; Auto-start VMS background server and launch browser once port 3000 is listening
+Filename: "wscript.exe"; Parameters: """{app}\vms_launcher.vbs"""; WorkingDir: "{app}"; Description: "Launch EyeTech VMS now"; Flags: postinstall
